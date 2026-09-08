@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'screens/alerts_page.dart';
 import 'screens/booking_page.dart';
 import 'screens/home_page.dart';
 import 'screens/queue_page.dart';
@@ -75,15 +76,6 @@ class _MainNavigationState extends State<MainNavigation> {
     }
   }
 
-  void showComingSoon(String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature will be available next 🚜'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     Widget currentPage;
@@ -94,11 +86,7 @@ class _MainNavigationState extends State<MainNavigation> {
         break;
 
       case 2:
-        currentPage = _placeholderPage(
-          icon: Icons.notifications_none,
-          title: 'Alerts',
-          message: 'Alerts will be available next.',
-        );
+        currentPage = const AlertsPage();
         break;
 
       case 3:
