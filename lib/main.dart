@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'screens/booking_page.dart';
 import 'screens/home_page.dart';
+import 'screens/queue_page.dart';
 import 'screens/token_page.dart';
 
 void main() {
@@ -85,19 +86,46 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    Widget currentPage;
+
+    switch (currentIndex) {
+      case 1:
+        currentPage = const QueuePage();
+        break;
+
+      case 2:
+        currentPage = _placeholderPage(
+          icon: Icons.notifications_none,
+          title: 'Alerts',
+          message: 'Alerts will be available next.',
+        );
+        break;
+
+      case 3:
+        currentPage = _placeholderPage(
+          icon: Icons.person_outline,
+          title: 'Farmer Profile',
+          message: 'Farmer profile will be available next.',
+        );
+        break;
+
+      default:
+        currentPage = HomePage(
+          onBookSlot: openBookingPage,
+          onQueue: () {
+            selectPage(1);
+          },
+          onAlerts: () {
+            selectPage(2);
+          },
+          onProfile: () {
+            selectPage(3);
+          },
+        );
+    }
+
     return Scaffold(
-      body: HomePage(
-        onBookSlot: openBookingPage,
-        onQueue: () {
-          showComingSoon('Live Queue');
-        },
-        onAlerts: () {
-          showComingSoon('Alerts');
-        },
-        onProfile: () {
-          showComingSoon('Farmer Profile');
-        },
-      ),
+      body: currentPage,
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
         onDestinationSelected: selectPage,
@@ -126,6 +154,47 @@ class _MainNavigationState extends State<MainNavigation> {
             label: 'Profile',
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _placeholderPage({
+    required IconData icon,
+    required String title,
+    required String message,
+  }) {
+    return SafeArea(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(30),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 70,
+                color: const Color(0xFF287A32),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 25,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFF687268),
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
