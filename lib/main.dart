@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'screens/booking_page.dart';
 import 'screens/home_page.dart';
+import 'screens/token_page.dart';
 
 void main() {
   runApp(const KisanQueueApp());
@@ -56,13 +57,18 @@ class _MainNavigationState extends State<MainNavigation> {
       ),
     );
 
-    if (result == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Slot confirmed successfully! Token: KQ-104 🎟️',
+    if (result is Map && mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TokenPage(
+            tokenNumber: result['token'],
+            crop: result['crop'],
+            quantity: result['quantity'],
+            centre: result['centre'],
+            date: result['date'],
+            time: result['time'],
           ),
-          behavior: SnackBarBehavior.floating,
         ),
       );
     }
@@ -82,20 +88,16 @@ class _MainNavigationState extends State<MainNavigation> {
     return Scaffold(
       body: HomePage(
         onBookSlot: openBookingPage,
-
         onQueue: () {
           showComingSoon('Live Queue');
         },
-
         onAlerts: () {
           showComingSoon('Alerts');
         },
-
         onProfile: () {
           showComingSoon('Farmer Profile');
         },
       ),
-
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
         onDestinationSelected: selectPage,
