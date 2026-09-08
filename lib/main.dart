@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'screens/alerts_page.dart';
 import 'screens/booking_page.dart';
+import 'screens/centre_page.dart';
 import 'screens/home_page.dart';
 import 'screens/profile_page.dart';
 import 'screens/queue_page.dart';
@@ -123,6 +124,12 @@ class _MainNavigationState extends State<MainNavigation> {
         currentPage = const ProfilePage();
         break;
 
+      case 4:
+        currentPage = CentrePage(
+          onBookSlot: openBookingPage,
+        );
+        break;
+
       default:
         currentPage = HomePage(
           onBookSlot: openBookingPage,
@@ -167,6 +174,11 @@ class _MainNavigationState extends State<MainNavigation> {
             icon: const Icon(Icons.person_outline),
             selectedIcon: const Icon(Icons.person),
             label: AppText.profile,
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.location_city_outlined),
+            selectedIcon: Icon(Icons.location_city),
+            label: 'Centres',
           ),
         ],
       ),
