@@ -1,10 +1,23 @@
 import 'package:flutter/material.dart';
 
 class AlertsPage extends StatelessWidget {
-  const AlertsPage({super.key});
+  const AlertsPage({
+    super.key,
+    required this.bookingData,
+  });
+
+  final Map<String, String>? bookingData;
 
   @override
   Widget build(BuildContext context) {
+    final hasBooking = bookingData != null;
+
+    final token = bookingData?['token'] ?? '—';
+    final crop = bookingData?['crop'] ?? '—';
+    final quantity = bookingData?['quantity'] ?? '—';
+    final centre = bookingData?['centre'] ?? '—';
+    final time = bookingData?['time'] ?? '—';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8F4),
       appBar: AppBar(
@@ -54,45 +67,54 @@ class AlertsPage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              _alertCard(
-                context: context,
-                icon: Icons.confirmation_number_outlined,
-                title: 'Token Confirmed',
-                message:
-                'Your procurement token KQ-104 has been successfully generated.',
-                time: 'Just now',
-                isImportant: true,
-              ),
-
-              _alertCard(
-                context: context,
-                icon: Icons.people_outline,
-                title: 'Queue Update',
-                message:
-                '12 farmers are currently ahead of you. Estimated wait is 45 minutes.',
-                time: '10 min ago',
-                isImportant: true,
-              ),
-
-              _alertCard(
-                context: context,
-                icon: Icons.access_time,
-                title: 'Slot Reminder',
-                message:
-                'Your procurement slot is scheduled for 10:00 AM today.',
-                time: '1 hour ago',
-                isImportant: false,
-              ),
-
-              _alertCard(
-                context: context,
-                icon: Icons.location_on_outlined,
-                title: 'Centre Open',
-                message:
-                'Government Procurement Centre is currently open and accepting farmers.',
-                time: '2 hours ago',
-                isImportant: false,
-              ),
+              if (!hasBooking)
+                _alertCard(
+                  context: context,
+                  icon: Icons.info_outline,
+                  title: 'No Active Booking',
+                  message:
+                  'Book a procurement slot to receive token and queue alerts.',
+                  time: 'Now',
+                  isImportant: true,
+                )
+              else ...[
+                _alertCard(
+                  context: context,
+                  icon: Icons.confirmation_number_outlined,
+                  title: 'Token Confirmed',
+                  message:
+                  'Your token $token has been generated for $crop ($quantity kg).',
+                  time: 'Just now',
+                  isImportant: true,
+                ),
+                _alertCard(
+                  context: context,
+                  icon: Icons.people_outline,
+                  title: 'Queue Update',
+                  message:
+                  '12 farmers are currently ahead of you. Estimated wait is 45 minutes.',
+                  time: 'Just now',
+                  isImportant: true,
+                ),
+                _alertCard(
+                  context: context,
+                  icon: Icons.access_time,
+                  title: 'Slot Reminder',
+                  message:
+                  'Your procurement slot is scheduled for $time.',
+                  time: 'Today',
+                  isImportant: false,
+                ),
+                _alertCard(
+                  context: context,
+                  icon: Icons.location_on_outlined,
+                  title: 'Centre Details',
+                  message:
+                  '$centre is your selected procurement centre.',
+                  time: 'Today',
+                  isImportant: false,
+                ),
+              ],
 
               const SizedBox(height: 16),
 
@@ -114,7 +136,8 @@ class AlertsPage extends StatelessWidget {
                     SizedBox(width: 14),
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment:
+                        CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Farmer Tip',
@@ -187,30 +210,13 @@ class AlertsPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF172118),
-                        ),
-                      ),
-                    ),
-                    if (isImportant)
-                      Container(
-                        width: 8,
-                        height: 8,
-                        margin: const EdgeInsets.only(top: 5),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF287A32),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                  ],
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF172118),
+                  ),
                 ),
                 const SizedBox(height: 5),
                 Text(

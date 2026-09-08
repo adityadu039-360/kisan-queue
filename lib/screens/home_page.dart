@@ -7,6 +7,7 @@ class HomePage extends StatelessWidget {
     required this.onQueue,
     required this.onAlerts,
     required this.onProfile,
+    required this.bookingData,
   });
 
   final VoidCallback onBookSlot;
@@ -14,8 +15,20 @@ class HomePage extends StatelessWidget {
   final VoidCallback onAlerts;
   final VoidCallback onProfile;
 
+  final Map<String, String>? bookingData;
+
   @override
   Widget build(BuildContext context) {
+    final hasBooking = bookingData != null;
+
+    final token = bookingData?['token'] ?? '—';
+    final queue = hasBooking ? '12' : '—';
+    final centre =
+        bookingData?['centre'] ?? 'Procurement centre';
+    final queueMessage = hasBooking
+        ? '12 farmers ahead • Estimated wait 45 min'
+        : 'Queue information available after booking';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8F4),
       body: SafeArea(
@@ -173,7 +186,7 @@ class HomePage extends StatelessWidget {
                     child: _ActivityCard(
                       icon: Icons.confirmation_number_outlined,
                       title: 'Token',
-                      value: '—',
+                      value: token,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -181,7 +194,7 @@ class HomePage extends StatelessWidget {
                     child: _ActivityCard(
                       icon: Icons.people_outline,
                       title: 'Queue',
-                      value: '—',
+                      value: queue,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -208,60 +221,64 @@ class HomePage extends StatelessWidget {
 
               const SizedBox(height: 14),
 
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.grey.shade200,
+              GestureDetector(
+                onTap: hasBooking ? onQueue : onBookSlot,
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.grey.shade200,
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE8F5E9),
-                        borderRadius: BorderRadius.circular(14),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F5E9),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.speed_rounded,
+                          color: Color(0xFF287A32),
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.speed_rounded,
-                        color: Color(0xFF287A32),
-                      ),
-                    ),
 
-                    const SizedBox(width: 14),
+                      const SizedBox(width: 14),
 
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Procurement centre',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              centre,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 5),
-                          Text(
-                            'Queue information available after booking',
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
+                            const SizedBox(height: 5),
+                            Text(
+                              queueMessage,
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
 
-                    const Icon(
-                      Icons.chevron_right_rounded,
-                      color: Colors.grey,
-                    ),
-                  ],
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: Colors.grey,
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
@@ -306,7 +323,8 @@ class HomePage extends StatelessWidget {
 
                     const Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment:
+                        CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Government Procurement Centre',
