@@ -6,6 +6,7 @@ import 'screens/home_page.dart';
 import 'screens/profile_page.dart';
 import 'screens/queue_page.dart';
 import 'screens/token_page.dart';
+import 'services/app_language.dart';
 
 void main() {
   runApp(const KisanQueueApp());
@@ -16,22 +17,27 @@ class KisanQueueApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Kisan Queue',
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF6F8F4),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF287A32),
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFFF6F8F4),
-          foregroundColor: Color(0xFF172118),
-          elevation: 0,
-        ),
-      ),
-      home: const MainNavigation(),
+    return ValueListenableBuilder<AppLanguage>(
+      valueListenable: appLanguage,
+      builder: (context, language, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Kisan Queue',
+          theme: ThemeData(
+            useMaterial3: true,
+            scaffoldBackgroundColor: const Color(0xFFF6F8F4),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF287A32),
+            ),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Color(0xFFF6F8F4),
+              foregroundColor: Color(0xFF172118),
+              elevation: 0,
+            ),
+          ),
+          home: const MainNavigation(),
+        );
+      },
     );
   }
 }
@@ -141,26 +147,26 @@ class _MainNavigationState extends State<MainNavigation> {
         backgroundColor: Colors.white,
         indicatorColor: const Color(0xFFDDF1DF),
         elevation: 3,
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
+            label: AppText.home,
           ),
           NavigationDestination(
-            icon: Icon(Icons.confirmation_number_outlined),
-            selectedIcon: Icon(Icons.confirmation_number),
-            label: 'Queue',
+            icon: const Icon(Icons.confirmation_number_outlined),
+            selectedIcon: const Icon(Icons.confirmation_number),
+            label: AppText.queue,
           ),
           NavigationDestination(
-            icon: Icon(Icons.notifications_none),
-            selectedIcon: Icon(Icons.notifications),
-            label: 'Alerts',
+            icon: const Icon(Icons.notifications_none),
+            selectedIcon: const Icon(Icons.notifications),
+            label: AppText.alerts,
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
+            icon: const Icon(Icons.person_outline),
+            selectedIcon: const Icon(Icons.person),
+            label: AppText.profile,
           ),
         ],
       ),

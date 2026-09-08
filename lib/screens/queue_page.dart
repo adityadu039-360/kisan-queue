@@ -1,6 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
-class QueuePage extends StatelessWidget {
+class QueuePage extends StatefulWidget {
   const QueuePage({
     super.key,
     required this.bookingData,
@@ -9,16 +11,91 @@ class QueuePage extends StatelessWidget {
   final Map<String, String>? bookingData;
 
   @override
-  Widget build(BuildContext context) {
-    final hasBooking = bookingData != null;
+  State<QueuePage> createState() => _QueuePageState();
+}
 
-    final token = bookingData?['token'] ?? '—';
-    final crop = bookingData?['crop'] ?? 'No booking yet';
-    final quantity = bookingData?['quantity'] ?? '—';
+class _QueuePageState extends State<QueuePage> {
+  int farmersAhead = 12;
+  int estimatedWait = 45;
+  int currentPosition = 13;
+  int totalQueue = 25;
+
+  Timer? queueTimer;
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.bookingData != null) {
+      queueTimer = Timer.periodic(
+        const Duration(seconds: 20),
+            (_) {
+          moveQueue();
+        },
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    queueTimer?.cancel();
+    super.dispose();
+  }
+
+  void moveQueue() {
+    if (!mounted || widget.bookingData == null) {
+      return;
+    }
+
+    if (farmersAhead > 0) {
+      setState(() {
+        farmersAhead--;
+        estimatedWait = farmersAhead * 4;
+        currentPosition = farmersAhead + 1;
+      });
+    }
+  }
+
+  void refreshQueue() {
+    if (widget.bookingData == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please book a procurement slot first.',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    moveQueue();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Queue status updated successfully.',
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasBooking = widget.bookingData != null;
+
+    final token = widget.bookingData?['token'] ?? '—';
+    final crop = widget.bookingData?['crop'] ?? 'No booking yet';
+    final quantity = widget.bookingData?['quantity'] ?? '—';
     final centre =
-        bookingData?['centre'] ?? 'Book a procurement slot first';
-    final date = bookingData?['date'] ?? '—';
-    final time = bookingData?['time'] ?? '—';
+        widget.bookingData?['centre'] ?? 'Book a procurement slot first';
+    final date = widget.bookingData?['date'] ?? '—';
+    final time = widget.bookingData?['time'] ?? '—';
+
+    final progress = hasBooking && totalQueue > 0
+        ? currentPosition / totalQueue
+        : 0.0;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8F4),
@@ -58,7 +135,7 @@ class QueuePage extends StatelessWidget {
               const SizedBox(height: 24),
 
               if (!hasBooking)
-                _emptyBookingCard(context)
+                _emptyBookingCard()
               else ...[
                 Container(
                   width: double.infinity,
@@ -127,7 +204,7 @@ class QueuePage extends StatelessWidget {
                     Expanded(
                       child: _statCard(
                         icon: Icons.people_outline,
-                        value: '12',
+                        value: '$farmersAhead',
                         label: 'Farmers Ahead',
                       ),
                     ),
@@ -135,7 +212,7 @@ class QueuePage extends StatelessWidget {
                     Expanded(
                       child: _statCard(
                         icon: Icons.timer_outlined,
-                        value: '45 min',
+                        value: '$estimatedWait min',
                         label: 'Estimated Wait',
                       ),
                     ),
@@ -225,8 +302,8 @@ class QueuePage extends StatelessWidget {
                       Row(
                         mainAxisAlignment:
                         MainAxisAlignment.spaceBetween,
-                        children: const [
-                          Text(
+                        children: [
+                          const Text(
                             'Current position',
                             style: TextStyle(
                               color: Color(0xFF687268),
@@ -234,8 +311,8 @@ class QueuePage extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '13 / 25',
-                            style: TextStyle(
+                            '$currentPosition / $totalQueue',
+                            style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
                             ),
@@ -245,20 +322,23 @@ class QueuePage extends StatelessWidget {
                       const SizedBox(height: 12),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: const LinearProgressIndicator(
-                          value: 0.52,
+                        child: LinearProgressIndicator(
+                          value: progress.clamp(0.0, 1.0),
                           minHeight: 12,
-                          backgroundColor: Color(0xFFE2E8E2),
+                          backgroundColor:
+                          const Color(0xFFE2E8E2),
                           valueColor:
-                          AlwaysStoppedAnimation<Color>(
+                          const AlwaysStoppedAnimation<Color>(
                             Color(0xFF287A32),
                           ),
                         ),
                       ),
                       const SizedBox(height: 12),
-                      const Text(
-                        'You are moving closer to your turn.',
-                        style: TextStyle(
+                      Text(
+                        farmersAhead > 0
+                            ? 'You are moving closer to your turn.'
+                            : 'It is almost your turn!',
+                        style: const TextStyle(
                           fontSize: 13,
                           color: Color(0xFF526052),
                         ),
@@ -292,7 +372,7 @@ class QueuePage extends StatelessWidget {
                   icon: Icons.people,
                   title: 'Waiting in Queue',
                   subtitle:
-                  '12 farmers are currently ahead of you.',
+                  '$farmersAhead farmers are currently ahead of you.',
                   completed: true,
                 ),
 
@@ -319,16 +399,7 @@ class QueuePage extends StatelessWidget {
                   width: double.infinity,
                   height: 54,
                   child: OutlinedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Queue status updated successfully.',
-                          ),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
+                    onPressed: refreshQueue,
                     icon: const Icon(Icons.refresh),
                     label: const Text(
                       'Refresh Queue',
@@ -356,7 +427,7 @@ class QueuePage extends StatelessWidget {
     );
   }
 
-  Widget _emptyBookingCard(BuildContext context) {
+  Widget _emptyBookingCard() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -367,23 +438,23 @@ class QueuePage extends StatelessWidget {
           color: const Color(0xFFE1E7E1),
         ),
       ),
-      child: Column(
+      child: const Column(
         children: [
-          const Icon(
+          Icon(
             Icons.confirmation_number_outlined,
             size: 60,
             color: Color(0xFF287A32),
           ),
-          const SizedBox(height: 16),
-          const Text(
+          SizedBox(height: 16),
+          Text(
             'No active booking',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(height: 8),
+          Text(
             'Book a procurement slot to receive your digital token and join the queue.',
             textAlign: TextAlign.center,
             style: TextStyle(
