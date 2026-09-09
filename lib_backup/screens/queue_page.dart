@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../widgets/app_animations.dart';
-
 class QueuePage extends StatefulWidget {
   const QueuePage({
     super.key,
@@ -99,8 +97,7 @@ class _QueuePageState extends State<QueuePage> {
         ? currentPosition / totalQueue
         : 0.0;
 
-    return AnimatedPage(
-      child: Scaffold(
+    return Scaffold(
       backgroundColor: const Color(0xFFF6F8F4),
       appBar: AppBar(
         title: const Text(
@@ -427,7 +424,7 @@ class _QueuePageState extends State<QueuePage> {
           ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _emptyBookingCard() {

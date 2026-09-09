@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/app_animations.dart';
-
 class BookingPage extends StatefulWidget {
   const BookingPage({super.key});
 
@@ -166,8 +164,7 @@ class _BookingPageState extends State<BookingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedPage(
-      child: Scaffold(
+    return Scaffold(
       backgroundColor: const Color(0xFFF6F8F4),
       appBar: AppBar(
         title: const Text(
@@ -327,7 +324,7 @@ class _BookingPageState extends State<BookingPage> {
 
               const SizedBox(height: 8),
 
-              AnimatedTap(
+              InkWell(
                 onTap: selectDate,
                 borderRadius: BorderRadius.circular(14),
                 child: Container(
@@ -380,7 +377,7 @@ class _BookingPageState extends State<BookingPage> {
                 final available = slot['available']!;
                 final isSelected = selectedTimeSlot == time;
 
-                return AnimatedTap(
+                return GestureDetector(
                   onTap: () {
                     setState(() {
                       selectedTimeSlot = time;
@@ -511,6 +508,6 @@ class _BookingPageState extends State<BookingPage> {
           ),
         ),
       ),
-    ));
+    );
   }
 }

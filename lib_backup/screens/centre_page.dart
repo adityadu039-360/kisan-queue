@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/app_animations.dart';
-
 class CentrePage extends StatelessWidget {
   const CentrePage({
     super.key,
@@ -12,8 +10,7 @@ class CentrePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedPage(
-      child: Scaffold(
+    return Scaffold(
       backgroundColor: const Color(0xFFF6F8F4),
       appBar: AppBar(
         title: const Text(
@@ -128,7 +125,7 @@ class CentrePage extends StatelessWidget {
           ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _centreCard({

@@ -8,7 +8,6 @@ import 'screens/profile_page.dart';
 import 'screens/queue_page.dart';
 import 'screens/token_page.dart';
 import 'services/app_language.dart';
-import 'widgets/app_animations.dart';
 
 void main() {
   runApp(const KisanQueueApp());
@@ -65,7 +64,7 @@ class _MainNavigationState extends State<MainNavigation> {
   Future<void> openBookingPage() async {
     final result = await Navigator.push(
       context,
-      PremiumPageRoute(
+      MaterialPageRoute(
         builder: (context) => const BookingPage(),
       ),
     );
@@ -90,7 +89,7 @@ class _MainNavigationState extends State<MainNavigation> {
 
       Navigator.push(
         context,
-        PremiumPageRoute(
+        MaterialPageRoute(
           builder: (context) => TokenPage(
             tokenNumber: newBooking['token']!,
             crop: newBooking['crop']!,
@@ -107,7 +106,7 @@ class _MainNavigationState extends State<MainNavigation> {
   void openCentrePage() {
     Navigator.push(
       context,
-      PremiumPageRoute(
+      MaterialPageRoute(
         builder: (context) => CentrePage(
           onBookSlot: openBookingPage,
         ),
@@ -154,30 +153,7 @@ class _MainNavigationState extends State<MainNavigation> {
     }
 
     return Scaffold(
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 650),
-        reverseDuration: const Duration(milliseconds: 450),
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInCubic,
-        transitionBuilder: (child, animation) {
-          final slide = Tween<Offset>(
-            begin: const Offset(0.018, 0),
-            end: Offset.zero,
-          ).animate(animation);
-
-          return FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: slide,
-              child: child,
-            ),
-          );
-        },
-        child: KeyedSubtree(
-          key: ValueKey(currentIndex),
-          child: currentPage,
-        ),
-      ),
+      body: currentPage,
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
         onDestinationSelected: selectPage,

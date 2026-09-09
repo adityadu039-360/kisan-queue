@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/app_animations.dart';
-
 class AlertsPage extends StatelessWidget {
   const AlertsPage({
     super.key,
@@ -20,8 +18,7 @@ class AlertsPage extends StatelessWidget {
     final centre = bookingData?['centre'] ?? '—';
     final time = bookingData?['time'] ?? '—';
 
-    return AnimatedPage(
-      child: Scaffold(
+    return Scaffold(
       backgroundColor: const Color(0xFFF6F8F4),
       appBar: AppBar(
         title: const Text(
@@ -169,7 +166,7 @@ class AlertsPage extends StatelessWidget {
           ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _alertCard({
