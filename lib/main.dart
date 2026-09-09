@@ -103,6 +103,17 @@ class _MainNavigationState extends State<MainNavigation> {
     }
   }
 
+  void openCentrePage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CentrePage(
+          onBookSlot: openBookingPage,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget currentPage;
@@ -124,12 +135,6 @@ class _MainNavigationState extends State<MainNavigation> {
         currentPage = const ProfilePage();
         break;
 
-      case 4:
-        currentPage = CentrePage(
-          onBookSlot: openBookingPage,
-        );
-        break;
-
       default:
         currentPage = HomePage(
           onBookSlot: openBookingPage,
@@ -142,6 +147,7 @@ class _MainNavigationState extends State<MainNavigation> {
           onProfile: () {
             selectPage(3);
           },
+          onCentres: openCentrePage,
           bookingData: bookingData,
         );
     }
@@ -174,11 +180,6 @@ class _MainNavigationState extends State<MainNavigation> {
             icon: const Icon(Icons.person_outline),
             selectedIcon: const Icon(Icons.person),
             label: AppText.profile,
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.location_city_outlined),
-            selectedIcon: Icon(Icons.location_city),
-            label: 'Centres',
           ),
         ],
       ),

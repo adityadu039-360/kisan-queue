@@ -8,12 +8,14 @@ class HomePage extends StatelessWidget {
     required this.onAlerts,
     required this.onProfile,
     required this.bookingData,
+    this.onCentres,
   });
 
   final VoidCallback onBookSlot;
   final VoidCallback onQueue;
   final VoidCallback onAlerts;
   final VoidCallback onProfile;
+  final VoidCallback? onCentres;
 
   final Map<String, String>? bookingData;
 
@@ -23,8 +25,8 @@ class HomePage extends StatelessWidget {
 
     final token = bookingData?['token'] ?? '—';
     final queue = hasBooking ? '12' : '—';
-    final centre =
-        bookingData?['centre'] ?? 'Procurement centre';
+    final centre = bookingData?['centre'] ?? 'Procurement centre';
+
     final queueMessage = hasBooking
         ? '12 farmers ahead • Estimated wait 45 min'
         : 'Queue information available after booking';
@@ -166,6 +168,37 @@ class HomePage extends StatelessWidget {
                 ),
               ),
 
+              const SizedBox(height: 14),
+
+              // Procurement centre button
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: onCentres,
+                  icon: const Icon(
+                    Icons.location_city_outlined,
+                  ),
+                  label: const Text(
+                    'View Procurement Centres',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF287A32),
+                    backgroundColor: Colors.white,
+                    side: const BorderSide(
+                      color: Color(0xFF287A32),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+
               const SizedBox(height: 28),
 
               // Section title
@@ -295,62 +328,65 @@ class HomePage extends StatelessWidget {
 
               const SizedBox(height: 14),
 
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.grey.shade200,
+              GestureDetector(
+                onTap: onCentres,
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.grey.shade200,
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF0F7EF),
-                        borderRadius: BorderRadius.circular(14),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0F7EF),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.location_on_outlined,
+                          color: Color(0xFF287A32),
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.location_on_outlined,
-                        color: Color(0xFF287A32),
-                      ),
-                    ),
 
-                    const SizedBox(width: 14),
+                      const SizedBox(width: 14),
 
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Government Procurement Centre',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Government Procurement Centre',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 5),
-                          Text(
-                            'Nearby • Open today',
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
+                            SizedBox(height: 5),
+                            Text(
+                              'Nearby • Open today',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
 
-                    const Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      size: 15,
-                      color: Colors.grey,
-                    ),
-                  ],
+                      const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 15,
+                        color: Colors.grey,
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
