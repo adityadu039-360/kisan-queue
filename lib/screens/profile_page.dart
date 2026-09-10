@@ -1,34 +1,42 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/app_animations.dart';
 import '../services/app_language.dart';
 
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+  const ProfilePage({
+    super.key,
+    required this.farmerName,
+    required this.farmerMobile,
+    required this.onLogout,
+  });
+
+  final String farmerName;
+  final String farmerMobile;
+  final Future<void> Function() onLogout;
 
   void showLanguageDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (dialogContext) {
+      builder: (context) {
         return AlertDialog(
           title: Text(AppText.chooseLanguage),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               _languageOption(
-                context: dialogContext,
-                language: AppLanguage.english,
-                title: 'English',
+                context,
+                AppLanguage.english,
+                'English',
               ),
               _languageOption(
-                context: dialogContext,
-                language: AppLanguage.hindi,
-                title: 'हिंदी',
+                context,
+                AppLanguage.hindi,
+                'हिंदी',
               ),
               _languageOption(
-                context: dialogContext,
-                language: AppLanguage.marathi,
-                title: 'मराठी',
+                context,
+                AppLanguage.marathi,
+                'मराठी',
               ),
             ],
           ),
@@ -37,36 +45,63 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _languageOption({
-    required BuildContext context,
-    required AppLanguage language,
-    required String title,
-  }) {
-    return ValueListenableBuilder<AppLanguage>(
-      valueListenable: appLanguage,
-      builder: (context, selectedLanguage, child) {
-        final isSelected = selectedLanguage == language;
+  Widget _languageOption(
+      BuildContext context,
+      AppLanguage language,
+      String label,
+      ) {
+    final selected = appLanguage.value == language;
 
-        return ListTile(
-          leading: Icon(
-            isSelected
-                ? Icons.radio_button_checked
-                : Icons.radio_button_off,
-            color: const Color(0xFF287A32),
+    return ListTile(
+      leading: Icon(
+        selected
+            ? Icons.radio_button_checked
+            : Icons.radio_button_off,
+        color: const Color(0xFF287A32),
+      ),
+      title: Text(label),
+      onTap: () {
+        appLanguage.value = language;
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  Future<void> confirmLogout(BuildContext context) async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Logout'),
+          content: const Text(
+            'Are you sure you want to logout?',
           ),
-          title: Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+              child: const Text('Cancel'),
             ),
-          ),
-          onTap: () {
-            appLanguage.value = language;
-            Navigator.pop(context);
-          },
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                const Color(0xFF287A32),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Logout'),
+            ),
+          ],
         );
       },
     );
+
+    if (shouldLogout == true) {
+      await onLogout();
+    }
   }
 
   @override
@@ -74,241 +109,208 @@ class ProfilePage extends StatelessWidget {
     return ValueListenableBuilder<AppLanguage>(
       valueListenable: appLanguage,
       builder: (context, language, child) {
-        return AnimatedPage(
-          child: Scaffold(
-            backgroundColor: const Color(0xFFF6F8F4),
-            appBar: AppBar(
-              title: Text(
-                AppText.farmerProfile,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
+        return Scaffold(
+          backgroundColor: const Color(0xFFF6F8F4),
+          appBar: AppBar(
+            title: Text(AppText.farmerProfile),
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+
+                Container(
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5E9),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFF287A32),
+                      width: 2,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.person,
+                    size: 52,
+                    color: Color(0xFF287A32),
+                  ),
                 ),
-              ),
-              centerTitle: true,
-            ),
-            body: SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
-                child: Column(
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF287A32),
-                        borderRadius: BorderRadius.circular(26),
+
+                const SizedBox(height: 18),
+
+                Text(
+                  farmerName,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF172118),
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+
+                Text(
+                  AppText.verifiedFarmer,
+                  style: const TextStyle(
+                    color: Color(0xFF287A32),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                const SizedBox(height: 28),
+
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: Colors.grey.shade200,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      _profileRow(
+                        icon: Icons.person_outline,
+                        title: 'Name',
+                        value: farmerName,
                       ),
-                      child: Column(
-                        children: [
-                          const CircleAvatar(
-                            radius: 38,
-                            backgroundColor: Colors.white,
-                            child: Icon(
-                              Icons.person,
-                              size: 44,
-                              color: Color(0xFF287A32),
-                            ),
-                          ),
+                      const Divider(height: 28),
+                      _profileRow(
+                        icon: Icons.phone_outlined,
+                        title: 'Mobile Number',
+                        value: '+91 $farmerMobile',
+                      ),
+                    ],
+                  ),
+                ),
 
-                          const SizedBox(height: 14),
+                const SizedBox(height: 18),
 
-                          const Text(
-                            'Ramesh Kumar',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-
-                          const SizedBox(height: 5),
-
-                          Text(
-                            '${AppText.farmerId}: KQ-F1024',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                            ),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 7,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              AppText.verifiedFarmer,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
+                InkWell(
+                  onTap: () {
+                    showLanguageDialog(context);
+                  },
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: Colors.grey.shade200,
                       ),
                     ),
-
-                    const SizedBox(height: 20),
-
-                    _profileCard(
-                      icon: Icons.phone_outlined,
-                      title: 'Mobile Number',
-                      value: '+91 98765 43210',
-                    ),
-
-                    _profileCard(
-                      icon: Icons.location_on_outlined,
-                      title: 'Village',
-                      value: 'Rampur Village',
-                    ),
-
-                    _profileCard(
-                      icon: Icons.map_outlined,
-                      title: 'District',
-                      value: 'Nashik',
-                    ),
-
-                    _profileCard(
-                      icon: Icons.grass_outlined,
-                      title: 'Primary Crop',
-                      value: 'Wheat',
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: const Color(0xFFE1E7E1),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 46,
+                          height: 46,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F5E9),
+                            borderRadius:
+                            BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            Icons.language,
+                            color: Color(0xFF287A32),
+                          ),
                         ),
-                      ),
-                      child: Column(
-                        children: [
-                          ListTile(
-                            leading: const Icon(
-                              Icons.language,
-                              color: Color(0xFF287A32),
-                            ),
-                            title: Text(
-                              AppText.language,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            subtitle: Text(
-                              appLanguage.languageName,
-                            ),
-                            trailing: const Icon(
-                              Icons.chevron_right,
-                            ),
-                            onTap: () {
-                              showLanguageDialog(context);
-                            },
-                          ),
-
-                          const Divider(height: 1),
-
-                          ListTile(
-                            leading: const Icon(
-                              Icons.help_outline,
-                              color: Color(0xFF287A32),
-                            ),
-                            title: const Text(
-                              'Help & Support',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            trailing: const Icon(
-                              Icons.chevron_right,
-                            ),
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Help & Support will be available soon.',
-                                  ),
-                                  behavior: SnackBarBehavior.floating,
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppText.language,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight:
+                                  FontWeight.w700,
                                 ),
-                              );
-                            },
-                          ),
-
-                          const Divider(height: 1),
-
-                          ListTile(
-                            leading: const Icon(
-                              Icons.info_outline,
-                              color: Color(0xFF287A32),
-                            ),
-                            title: const Text(
-                              'About Kisan Queue',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
                               ),
-                            ),
-                            trailing: const Icon(
-                              Icons.chevron_right,
-                            ),
-                            onTap: () {
-                              showAboutDialog(
-                                context: context,
-                                applicationName: 'Kisan Queue',
-                                applicationVersion: '1.0.0',
-                                applicationIcon: const Icon(
-                                  Icons.agriculture,
-                                  color: Color(0xFF287A32),
-                                  size: 36,
+                              const SizedBox(height: 4),
+                              Text(
+                                appLanguage
+                                    .languageName,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
                                 ),
-                                children: const [
-                                  Text(
-                                    'A farmer-friendly digital procurement slot and queue management prototype.',
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-
-                          const Divider(height: 1),
-
-                          ListTile(
-                            leading: const Icon(
-                              Icons.logout,
-                              color: Colors.redAccent,
-                            ),
-                            title: const Text(
-                              'Logout',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: Colors.redAccent,
                               ),
-                            ),
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Logout feature will be connected later.',
-                                  ),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
-                            },
+                            ],
                           ),
-                        ],
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: Colors.grey,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      confirmLogout(context);
+                    },
+                    icon: const Icon(
+                      Icons.logout,
+                    ),
+                    label: const Text(
+                      'Logout',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ],
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor:
+                      const Color(0xFFC62828),
+                      side: const BorderSide(
+                        color: Color(0xFFC62828),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                        BorderRadius.circular(15),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+
+                const SizedBox(height: 24),
+
+                const Text(
+                  'Kisan Queue',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF287A32),
+                  ),
+                ),
+
+                const SizedBox(height: 5),
+
+                const Text(
+                  'Simple Queue • Smart Notifications • Happier Farmers',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF7A827A),
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -316,62 +318,51 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _profileCard({
+  Widget _profileRow({
     required IconData icon,
     required String title,
     required String value,
   }) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: const Color(0xFFE1E7E1),
+    return Row(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: const Color(0xFFE8F5E9),
+            borderRadius: BorderRadius.circular(13),
+          ),
+          child: Icon(
+            icon,
+            color: const Color(0xFF287A32),
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: const Color(0xFFEAF5EB),
-            child: Icon(
-              icon,
-              color: const Color(0xFF287A32),
-            ),
-          ),
-
-          const SizedBox(width: 14),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF687268),
-                  ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment:
+            CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
                 ),
-
-                const SizedBox(height: 4),
-
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF172118),
-                  ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF172118),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

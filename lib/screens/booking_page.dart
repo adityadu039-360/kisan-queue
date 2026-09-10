@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/app_animations.dart';
-
 class BookingPage extends StatefulWidget {
   const BookingPage({super.key});
 
@@ -10,54 +8,35 @@ class BookingPage extends StatefulWidget {
 }
 
 class _BookingPageState extends State<BookingPage> {
+  final formKey = GlobalKey<FormState>();
+
   String selectedCrop = 'Wheat';
-  String selectedCentre = 'Government Procurement Centre';
-  String? selectedTimeSlot;
+  String selectedDate = 'Today';
+  String selectedTime = '09:00 AM - 10:00 AM';
 
-  final TextEditingController quantityController =
-  TextEditingController();
-
-  DateTime selectedDate = DateTime.now();
+  final quantityController = TextEditingController();
 
   final List<String> crops = [
     'Wheat',
     'Rice',
     'Maize',
-    'Cotton',
+    'Bajra',
     'Soybean',
   ];
 
-  final List<String> centres = [
-    'Government Procurement Centre',
-    'Kisan Seva Centre',
-    'District Mandi Centre',
+  final List<String> dates = [
+    'Today',
+    'Tomorrow',
+    'Day After Tomorrow',
   ];
 
-  final List<Map<String, String>> timeSlots = [
-    {
-      'time': '09:00 AM',
-      'available': '12 slots available',
-    },
-    {
-      'time': '10:00 AM',
-      'available': '8 slots available',
-    },
-    {
-      'time': '11:00 AM',
-      'available': '15 slots available',
-    },
-    {
-      'time': '12:00 PM',
-      'available': '6 slots available',
-    },
-    {
-      'time': '02:00 PM',
-      'available': '10 slots available',
-    },
-    {
-      'time': '03:00 PM',
-      'available': '18 slots available',
-    },
+  final List<String> times = [
+    '09:00 AM - 10:00 AM',
+    '10:00 AM - 11:00 AM',
+    '11:00 AM - 12:00 PM',
+    '12:00 PM - 01:00 PM',
+    '02:00 PM - 03:00 PM',
+    '03:00 PM - 04:00 PM',
   ];
 
   @override
@@ -66,152 +45,112 @@ class _BookingPageState extends State<BookingPage> {
     super.dispose();
   }
 
-  Future<void> selectDate() async {
-    final today = DateTime.now();
-
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: today,
-      lastDate: today.add(const Duration(days: 30)),
-    );
-
-    if (pickedDate != null) {
-      setState(() {
-        selectedDate = pickedDate;
-      });
-    }
-  }
-
-  String formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/'
-        '${date.month.toString().padLeft(2, '0')}/'
-        '${date.year}';
-  }
-
   void confirmBooking() {
-    if (quantityController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter the quantity.'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+    if (!formKey.currentState!.validate()) {
       return;
     }
 
-    if (selectedTimeSlot == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a time slot.'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
+    final quantity = quantityController.text.trim();
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text(
-            'Confirm Booking',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Please confirm your procurement slot:',
-              ),
-              const SizedBox(height: 16),
-              Text('Crop: $selectedCrop'),
-              Text('Quantity: ${quantityController.text} kg'),
-              Text('Centre: $selectedCentre'),
-              Text('Date: ${formatDate(selectedDate)}'),
-              Text('Time: $selectedTimeSlot'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
+    const tokenNumber = 'KQ-104';
 
-                Navigator.pop(
-                  this.context,
-                  {
-                    'token': 'KQ-104',
-                    'crop': selectedCrop,
-                    'quantity': quantityController.text.trim(),
-                    'centre': selectedCentre,
-                    'date': formatDate(selectedDate),
-                    'time': selectedTimeSlot!,
-                  },
-                );
-              },
-              child: const Text('Confirm'),
-            ),
-          ],
-        );
+    Navigator.pop(
+      context,
+      {
+        'token': tokenNumber,
+        'crop': selectedCrop,
+        'quantity': '$quantity quintals',
+        'centre': 'Government Procurement Centre',
+        'date': selectedDate,
+        'time': selectedTime,
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedPage(
-      child: Scaffold(
+    return Scaffold(
       backgroundColor: const Color(0xFFF6F8F4),
       appBar: AppBar(
         title: const Text(
           'Book Procurement Slot',
           style: TextStyle(
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w800,
           ),
         ),
-        centerTitle: true,
-        backgroundColor: const Color(0xFFF6F8F4),
-        elevation: 0,
       ),
-      body: SafeArea(
+      body: Form(
+        key: formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+          padding: const EdgeInsets.fromLTRB(
+            20,
+            10,
+            20,
+            30,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Book your slot',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF172118),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF5EB),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-              ),
-
-              const SizedBox(height: 6),
-
-              const Text(
-                'Choose your crop, centre, date and preferred time.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF687268),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.location_on_rounded,
+                      color: Color(0xFF287A32),
+                      size: 28,
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Government Procurement Centre',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF172118),
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Your selected procurement centre',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF687268),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
               const SizedBox(height: 24),
 
-              // Crop
               const Text(
-                'Crop',
+                'Crop Details',
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF172118),
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              const Text(
+                'Select Crop',
+                style: TextStyle(
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -219,9 +158,11 @@ class _BookingPageState extends State<BookingPage> {
               const SizedBox(height: 8),
 
               DropdownButtonFormField<String>(
-                value: selectedCrop,
+                initialValue: selectedCrop,
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.grass),
+                  prefixIcon: const Icon(
+                    Icons.grass_outlined,
+                  ),
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
@@ -230,39 +171,46 @@ class _BookingPageState extends State<BookingPage> {
                   ),
                 ),
                 items: crops.map((crop) {
-                  return DropdownMenuItem(
+                  return DropdownMenuItem<String>(
                     value: crop,
                     child: Text(crop),
                   );
                 }).toList(),
                 onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      selectedCrop = value;
-                    });
+                  if (value == null) {
+                    return;
                   }
+
+                  setState(() {
+                    selectedCrop = value;
+                  });
                 },
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-              // Quantity
               const Text(
-                'Quantity (kg)',
+                'Quantity',
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),
               ),
 
               const SizedBox(height: 8),
 
-              TextField(
+              TextFormField(
                 controller: quantityController,
-                keyboardType: TextInputType.number,
+                keyboardType:
+                const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: InputDecoration(
                   hintText: 'Enter quantity',
-                  prefixIcon: const Icon(Icons.scale_outlined),
+                  suffixText: 'quintals',
+                  prefixIcon: const Icon(
+                    Icons.scale_outlined,
+                  ),
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
@@ -270,25 +218,42 @@ class _BookingPageState extends State<BookingPage> {
                     borderSide: BorderSide.none,
                   ),
                 ),
+                validator: (value) {
+                  final quantity = value?.trim() ?? '';
+
+                  if (quantity.isEmpty) {
+                    return 'Please enter quantity';
+                  }
+
+                  final number = double.tryParse(quantity);
+
+                  if (number == null || number <= 0) {
+                    return 'Enter a valid quantity';
+                  }
+
+                  return null;
+                },
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 28),
 
-              // Centre
               const Text(
-                'Procurement Centre',
+                'Choose Date',
                 style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF172118),
                 ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 14),
 
               DropdownButtonFormField<String>(
-                value: selectedCentre,
+                initialValue: selectedDate,
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.location_on_outlined),
+                  prefixIcon: const Icon(
+                    Icons.calendar_today_outlined,
+                  ),
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
@@ -296,213 +261,122 @@ class _BookingPageState extends State<BookingPage> {
                     borderSide: BorderSide.none,
                   ),
                 ),
-                items: centres.map((centre) {
-                  return DropdownMenuItem(
-                    value: centre,
-                    child: Text(
-                      centre,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                items: dates.map((date) {
+                  return DropdownMenuItem<String>(
+                    value: date,
+                    child: Text(date),
                   );
                 }).toList(),
                 onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      selectedCentre = value;
-                    });
+                  if (value == null) {
+                    return;
                   }
+
+                  setState(() {
+                    selectedDate = value;
+                  });
                 },
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 28),
 
-              // Date
               const Text(
-                'Preferred Date',
+                'Choose Time Slot',
                 style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF172118),
                 ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 14),
 
-              AnimatedTap(
-                onTap: selectDate,
-                borderRadius: BorderRadius.circular(14),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 17,
+              DropdownButtonFormField<String>(
+                initialValue: selectedTime,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(
+                    Icons.access_time_outlined,
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.calendar_today_outlined,
-                        color: Color(0xFF287A32),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          formatDate(selectedDate),
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const Icon(Icons.chevron_right),
-                    ],
+                    borderSide: BorderSide.none,
                   ),
                 ),
+                items: times.map((time) {
+                  return DropdownMenuItem<String>(
+                    value: time,
+                    child: Text(time),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value == null) {
+                    return;
+                  }
+
+                  setState(() {
+                    selectedTime = value;
+                  });
+                },
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 30),
 
-              // Time slots
-              const Text(
-                'Select Time Slot',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF8E7),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-              ),
-
-              const SizedBox(height: 12),
-
-              ...timeSlots.map((slot) {
-                final time = slot['time']!;
-                final available = slot['available']!;
-                final isSelected = selectedTimeSlot == time;
-
-                return AnimatedTap(
-                  onTap: () {
-                    setState(() {
-                      selectedTimeSlot = time;
-                    });
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFFE5F5E7)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isSelected
-                            ? const Color(0xFF287A32)
-                            : const Color(0xFFE0E5E0),
-                        width: isSelected ? 2 : 1,
-                      ),
+                child: const Row(
+                  crossAxisAlignment:
+                  CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Color(0xFF9A7100),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          isSelected
-                              ? Icons.radio_button_checked
-                              : Icons.radio_button_off,
-                          color: isSelected
-                              ? const Color(0xFF287A32)
-                              : Colors.grey,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment:
-                            CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                time,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                available,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF687268),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(
-                          Icons.schedule_outlined,
-                          color: Color(0xFF287A32),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-
-              const SizedBox(height: 12),
-
-              // Booking summary
-              if (selectedTimeSlot != null)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF8E5),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Column(
-                    crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Booking Summary',
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Please arrive at the procurement centre during your selected slot.',
                         style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 17,
+                          fontSize: 12,
+                          height: 1.4,
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      Text('Crop: $selectedCrop'),
-                      Text(
-                        'Quantity: ${quantityController.text.isEmpty ? '--' : quantityController.text} kg',
-                      ),
-                      Text('Centre: $selectedCentre'),
-                      Text('Date: ${formatDate(selectedDate)}'),
-                      Text('Time: $selectedTimeSlot'),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+              ),
 
               const SizedBox(height: 24),
 
-              // Confirm button
               SizedBox(
                 width: double.infinity,
-                height: 56,
+                height: 54,
                 child: ElevatedButton.icon(
                   onPressed: confirmBooking,
                   icon: const Icon(
-                    Icons.confirmation_number_outlined,
+                    Icons.check_circle_outline,
                   ),
                   label: const Text(
-                    'Confirm & Get Token',
+                    'Confirm Booking',
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF287A32),
+                    backgroundColor:
+                    const Color(0xFF287A32),
                     foregroundColor: Colors.white,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius:
+                      BorderRadius.circular(15),
                     ),
                   ),
                 ),
@@ -511,6 +385,6 @@ class _BookingPageState extends State<BookingPage> {
           ),
         ),
       ),
-    ));
+    );
   }
 }

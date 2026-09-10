@@ -25,8 +25,10 @@ class HomePage extends StatelessWidget {
 
     final token = bookingData?['token'] ?? '—';
     final queue = hasBooking ? '12' : '—';
+
     final centre =
-        bookingData?['centre'] ?? 'Government Procurement Centre';
+        bookingData?['centre'] ??
+            'Government Procurement Centre';
 
     final queueMessage = hasBooking
         ? '12 farmers ahead • Estimated wait 45 min'
@@ -36,16 +38,23 @@ class HomePage extends StatelessWidget {
       backgroundColor: const Color(0xFFF6F8F4),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 30),
+          padding: const EdgeInsets.fromLTRB(
+            20,
+            16,
+            20,
+            30,
+          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+            CrossAxisAlignment.start,
             children: [
               // Header
               Row(
                 children: [
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment:
+                      CrossAxisAlignment.start,
                       children: [
                         Text(
                           'Namaste 👋',
@@ -67,7 +76,6 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
 
-                  // Kisan Queue logo
                   GestureDetector(
                     onTap: onProfile,
                     child: Container(
@@ -76,14 +84,16 @@ class HomePage extends StatelessWidget {
                       padding: const EdgeInsets.all(3),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius:
+                        BorderRadius.circular(18),
                         border: Border.all(
                           color: const Color(0xFF287A32),
                           width: 1.5,
                         ),
                       ),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius:
+                        BorderRadius.circular(14),
                         child: Image.asset(
                           'assets/logo/kisan_queue_logo.jpeg',
                           fit: BoxFit.cover,
@@ -102,23 +112,30 @@ class HomePage extends StatelessWidget {
                 padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(
                   color: const Color(0xFF287A32),
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius:
+                  BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(
+                        alpha: 0.08,
+                      ),
                       blurRadius: 18,
                       offset: const Offset(0, 8),
                     ),
                   ],
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                  CrossAxisAlignment.start,
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.white.withValues(
+                          alpha: 0.15,
+                        ),
+                        borderRadius:
+                        BorderRadius.circular(12),
                       ),
                       child: const Icon(
                         Icons.calendar_month_rounded,
@@ -126,7 +143,9 @@ class HomePage extends StatelessWidget {
                         size: 24,
                       ),
                     ),
+
                     const SizedBox(height: 18),
+
                     const Text(
                       'Book your procurement slot',
                       style: TextStyle(
@@ -135,133 +154,99 @@ class HomePage extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
+
                     const SizedBox(height: 8),
+
                     Text(
                       'Avoid long waiting lines. Choose a convenient time before visiting the procurement centre.',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.85),
+                        color: Colors.white.withValues(
+                          alpha: 0.85,
+                        ),
                         fontSize: 13,
                         height: 1.5,
                       ),
                     ),
+
                     const SizedBox(height: 18),
+
                     ElevatedButton(
                       onPressed: onBookSlot,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF287A32),
+                        foregroundColor:
+                        const Color(0xFF287A32),
                         elevation: 0,
-                        padding: const EdgeInsets.symmetric(
+                        padding:
+                        const EdgeInsets.symmetric(
                           horizontal: 20,
-                          vertical: 13,
+                          vertical: 14,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius:
+                          BorderRadius.circular(14),
                         ),
                       ),
-                      child: const Text(
-                        'Book Slot',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.calendar_today_outlined,
+                            size: 19,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Book Slot Now',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 14),
+              const SizedBox(height: 20),
 
-              // Procurement centre button
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: OutlinedButton.icon(
-                  onPressed: onCentres,
-                  icon: const Icon(
-                    Icons.location_city_outlined,
-                  ),
-                  label: const Text(
-                    'View Procurement Centre',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF287A32),
-                    backgroundColor: Colors.white,
-                    side: const BorderSide(
-                      color: Color(0xFF287A32),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 28),
-
-              const Text(
-                'Your Activity',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-
-              const SizedBox(height: 14),
-
+              // Activity
               Row(
                 children: [
                   Expanded(
                     child: _ActivityCard(
-                      icon: Icons.confirmation_number_outlined,
-                      title: 'Token',
+                      icon:
+                      Icons.confirmation_number_outlined,
+                      title: 'My Token',
                       value: token,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: _ActivityCard(
-                      icon: Icons.people_outline,
-                      title: 'Queue',
+                      icon: Icons.groups_outlined,
+                      title: 'Queue Ahead',
                       value: queue,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _ActivityCard(
-                      icon: Icons.inventory_2_outlined,
-                      title: 'Visits',
-                      value: '0',
                     ),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
 
-              const Text(
-                'Today\'s Queue Status',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-
-              const SizedBox(height: 14),
-
+              // Queue status
               GestureDetector(
-                onTap: hasBooking ? onQueue : onBookSlot,
+                onTap: onQueue,
                 child: Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius:
+                    BorderRadius.circular(20),
                     border: Border.all(
-                      color: Colors.grey.shade200,
+                      color: const Color(0xFFE1E7E1),
                     ),
                   ),
                   child: Row(
@@ -270,11 +255,13 @@ class HomePage extends StatelessWidget {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE8F5E9),
-                          borderRadius: BorderRadius.circular(14),
+                          color:
+                          const Color(0xFFEAF5EB),
+                          borderRadius:
+                          BorderRadius.circular(14),
                         ),
                         child: const Icon(
-                          Icons.speed_rounded,
+                          Icons.queue_outlined,
                           color: Color(0xFF287A32),
                         ),
                       ),
@@ -284,19 +271,21 @@ class HomePage extends StatelessWidget {
                           crossAxisAlignment:
                           CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              centre,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
+                            const Text(
+                              'Live Queue',
+                              style: TextStyle(
                                 fontSize: 15,
+                                fontWeight:
+                                FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(height: 5),
+                            const SizedBox(height: 4),
                             Text(
                               queueMessage,
                               style: const TextStyle(
-                                color: Colors.grey,
                                 fontSize: 12,
+                                color:
+                                Color(0xFF687268),
                               ),
                             ),
                           ],
@@ -311,27 +300,20 @@ class HomePage extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 16),
 
-              const Text(
-                'Nearby Procurement Centre',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-
-              const SizedBox(height: 14),
-
+              // Alerts
               GestureDetector(
-                onTap: onCentres,
+                onTap: onAlerts,
                 child: Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius:
+                    BorderRadius.circular(20),
                     border: Border.all(
-                      color: Colors.grey.shade200,
+                      color: const Color(0xFFE1E7E1),
                     ),
                   ),
                   child: Row(
@@ -340,8 +322,77 @@ class HomePage extends StatelessWidget {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF0F7EF),
-                          borderRadius: BorderRadius.circular(14),
+                          color:
+                          const Color(0xFFFFF4D6),
+                          borderRadius:
+                          BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.notifications_none,
+                          color: Color(0xFF9A7100),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Alerts & Notifications',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight:
+                                FontWeight.w700,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Check your latest procurement updates.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color:
+                                Color(0xFF687268),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: Colors.grey,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Procurement centre
+              GestureDetector(
+                onTap: onCentres ?? onBookSlot,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius:
+                    BorderRadius.circular(20),
+                    border: Border.all(
+                      color: const Color(0xFFE1E7E1),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color:
+                          const Color(0xFFF0F7EF),
+                          borderRadius:
+                          BorderRadius.circular(14),
                         ),
                         child: const Icon(
                           Icons.location_on_outlined,
@@ -357,7 +408,8 @@ class HomePage extends StatelessWidget {
                             Text(
                               'Government Procurement Centre',
                               style: TextStyle(
-                                fontWeight: FontWeight.w700,
+                                fontWeight:
+                                FontWeight.w700,
                                 fontSize: 14,
                               ),
                             ),
@@ -384,13 +436,14 @@ class HomePage extends StatelessWidget {
 
               const SizedBox(height: 22),
 
-              // Kisan Queue logo branding
+              // Branding
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius:
+                  BorderRadius.circular(18),
                   border: Border.all(
                     color: Colors.grey.shade200,
                   ),
@@ -398,7 +451,8 @@ class HomePage extends StatelessWidget {
                 child: Row(
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius:
+                      BorderRadius.circular(12),
                       child: Image.asset(
                         'assets/logo/kisan_queue_logo.jpeg',
                         width: 64,
@@ -416,8 +470,10 @@ class HomePage extends StatelessWidget {
                             'Kisan Queue',
                             style: TextStyle(
                               fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF172118),
+                              fontWeight:
+                              FontWeight.w800,
+                              color:
+                              Color(0xFF172118),
                             ),
                           ),
                           SizedBox(height: 5),
@@ -438,11 +494,13 @@ class HomePage extends StatelessWidget {
 
               const SizedBox(height: 22),
 
+              // Tip
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF8E7),
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius:
+                  BorderRadius.circular(18),
                 ),
                 child: Row(
                   crossAxisAlignment:

@@ -9,6 +9,7 @@ import 'screens/profile_page.dart';
 import 'screens/queue_page.dart';
 import 'screens/token_page.dart';
 import 'services/app_language.dart';
+import 'services/farmer_session.dart';
 
 void main() {
   runApp(const KisanQueueApp());
@@ -55,24 +56,69 @@ class LoginPageWrapper extends StatefulWidget {
 
 class _LoginPageWrapperState
     extends State<LoginPageWrapper> {
-  String? farmerId;
+  FarmerSession? farmerSession;
+  bool loading = true;
 
-  void handleFarmerLogin(String id) {
+  @override
+  void initState() {
+    super.initState();
+    loadSavedSession();
+  }
+
+  Future<void> loadSavedSession() async {
+    final savedSession =
+    await FarmerSessionService.getSession();
+
+    if (!mounted) {
+      return;
+    }
+
     setState(() {
-      farmerId = id;
+      farmerSession = savedSession;
+      loading = false;
+    });
+  }
+
+  void handleFarmerLogin(FarmerSession session) {
+    setState(() {
+      farmerSession = session;
+    });
+  }
+
+  Future<void> logout() async {
+    await FarmerSessionService.clearSession();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      farmerSession = null;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (farmerId == null) {
+    if (loading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF6F8F4),
+        body: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFF287A32),
+          ),
+        ),
+      );
+    }
+
+    if (farmerSession == null) {
       return LoginPage(
         onFarmerLogin: handleFarmerLogin,
       );
     }
 
     return MainNavigation(
-      farmerId: farmerId!,
+      farmerSession: farmerSession!,
+      onLogout: logout,
     );
   }
 }
@@ -80,10 +126,12 @@ class _LoginPageWrapperState
 class MainNavigation extends StatefulWidget {
   const MainNavigation({
     super.key,
-    required this.farmerId,
+    required this.farmerSession,
+    required this.onLogout,
   });
 
-  final String farmerId;
+  final FarmerSession farmerSession;
+  final Future<void> Function() onLogout;
 
   @override
   State<MainNavigation> createState() =>
@@ -117,7 +165,8 @@ class _MainNavigationState extends State<MainNavigation> {
         'centre': result['centre'].toString(),
         'date': result['date'].toString(),
         'time': result['time'].toString(),
-        'farmerId': widget.farmerId,
+        'farmerName': widget.farmerSession.name,
+        'farmerMobile': widget.farmerSession.mobile,
       };
 
       setState(() {
@@ -173,7 +222,11 @@ class _MainNavigationState extends State<MainNavigation> {
         break;
 
       case 3:
-        currentPage = const ProfilePage();
+        currentPage = ProfilePage(
+          farmerName: widget.farmerSession.name,
+          farmerMobile: widget.farmerSession.mobile,
+          onLogout: widget.onLogout,
+        );
         break;
 
       default:

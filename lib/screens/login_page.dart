@@ -1,45 +1,62 @@
 import 'package:flutter/material.dart';
 
+import '../services/farmer_session.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({
     super.key,
     required this.onFarmerLogin,
   });
 
-  final void Function(String farmerId) onFarmerLogin;
+  final void Function(FarmerSession session) onFarmerLogin;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final farmerIdController = TextEditingController();
-  final pinController = TextEditingController();
-
-  bool hidePin = true;
+  final nameController = TextEditingController();
+  final mobileController = TextEditingController();
 
   @override
   void dispose() {
-    farmerIdController.dispose();
-    pinController.dispose();
+    nameController.dispose();
+    mobileController.dispose();
     super.dispose();
   }
 
-  void login() {
-    final farmerId = farmerIdController.text.trim();
-    final pin = pinController.text.trim();
+  Future<void> login() async {
+    final name = nameController.text.trim();
+    final mobile = mobileController.text.trim();
 
-    if (farmerId.isEmpty || pin.isEmpty) {
-      _showMessage('Please enter Farmer ID and PIN.');
+    if (name.isEmpty) {
+      _showMessage('Please enter your name.');
       return;
     }
 
-    if (pin != '1234') {
-      _showMessage('Incorrect PIN. Demo PIN is 1234.');
+    if (mobile.length != 10 ||
+        int.tryParse(mobile) == null) {
+      _showMessage(
+        'Please enter a valid 10-digit mobile number.',
+      );
       return;
     }
 
-    widget.onFarmerLogin(farmerId);
+    final session = FarmerSession(
+      name: name,
+      mobile: mobile,
+    );
+
+    await FarmerSessionService.saveSession(
+      name: name,
+      mobile: mobile,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    widget.onFarmerLogin(session);
   }
 
   void _showMessage(String message) {
@@ -61,7 +78,6 @@ class _LoginPageState extends State<LoginPage> {
             padding: const EdgeInsets.all(24),
             child: Column(
               children: [
-                // Logo
                 Container(
                   width: 150,
                   height: 150,
@@ -71,7 +87,7 @@ class _LoginPageState extends State<LoginPage> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 20,
                         offset: const Offset(0, 8),
                       ),
@@ -84,9 +100,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 24),
-
                 const Text(
                   'Welcome to Kisan Queue',
                   textAlign: TextAlign.center,
@@ -96,20 +110,16 @@ class _LoginPageState extends State<LoginPage> {
                     color: Color(0xFF172118),
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
                 const Text(
-                  'Login to book your procurement slot',
+                  'Enter your details to continue',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
                     color: Color(0xFF687268),
                   ),
                 ),
-
                 const SizedBox(height: 32),
-
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(22),
@@ -121,8 +131,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   child: Column(
-                    crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Farmer Login',
@@ -132,42 +141,35 @@ class _LoginPageState extends State<LoginPage> {
                           color: Color(0xFF172118),
                         ),
                       ),
-
                       const SizedBox(height: 6),
-
                       const Text(
-                        'Enter your Farmer ID to continue.',
+                        'Use your own name and mobile number.',
                         style: TextStyle(
                           fontSize: 13,
                           color: Color(0xFF687268),
                         ),
                       ),
-
                       const SizedBox(height: 22),
-
                       const Text(
-                        'Farmer ID',
+                        'Your Name',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF172118),
                         ),
                       ),
-
                       const SizedBox(height: 8),
-
                       TextField(
-                        controller: farmerIdController,
+                        controller: nameController,
                         textCapitalization:
-                        TextCapitalization.characters,
+                        TextCapitalization.words,
                         decoration: InputDecoration(
-                          hintText: 'Example: FARMER-001',
+                          hintText: 'Enter your name',
                           prefixIcon: const Icon(
-                            Icons.badge_outlined,
+                            Icons.person_outline,
                           ),
                           filled: true,
-                          fillColor:
-                          const Color(0xFFF6F8F4),
+                          fillColor: const Color(0xFFF6F8F4),
                           border: OutlineInputBorder(
                             borderRadius:
                             BorderRadius.circular(14),
@@ -175,46 +177,30 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 18),
-
                       const Text(
-                        'PIN',
+                        'Mobile Number',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF172118),
                         ),
                       ),
-
                       const SizedBox(height: 8),
-
                       TextField(
-                        controller: pinController,
-                        obscureText: hidePin,
-                        keyboardType: TextInputType.number,
-                        maxLength: 4,
+                        controller: mobileController,
+                        keyboardType: TextInputType.phone,
+                        maxLength: 10,
                         decoration: InputDecoration(
-                          hintText: 'Enter 4-digit PIN',
+                          hintText:
+                          'Enter 10-digit mobile number',
                           counterText: '',
+                          prefixText: '+91  ',
                           prefixIcon: const Icon(
-                            Icons.lock_outline,
-                          ),
-                          suffixIcon: IconButton(
-                            onPressed: () {
-                              setState(() {
-                                hidePin = !hidePin;
-                              });
-                            },
-                            icon: Icon(
-                              hidePin
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                            ),
+                            Icons.phone_outlined,
                           ),
                           filled: true,
-                          fillColor:
-                          const Color(0xFFF6F8F4),
+                          fillColor: const Color(0xFFF6F8F4),
                           border: OutlineInputBorder(
                             borderRadius:
                             BorderRadius.circular(14),
@@ -222,9 +208,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 22),
-
                       SizedBox(
                         width: double.infinity,
                         height: 52,
@@ -241,7 +225,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           child: const Text(
-                            'Login',
+                            'Continue',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -249,9 +233,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 16),
-
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
@@ -263,18 +245,17 @@ class _LoginPageState extends State<LoginPage> {
                         child: const Row(
                           children: [
                             Icon(
-                              Icons.info_outline,
+                              Icons.lock_outline,
                               color: Color(0xFF287A32),
                               size: 20,
                             ),
                             SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'Demo PIN: 1234',
+                                'Your login stays active until you log out.',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color:
-                                  Color(0xFF287A32),
+                                  color: Color(0xFF287A32),
                                   fontWeight:
                                   FontWeight.w600,
                                 ),
@@ -286,9 +267,7 @@ class _LoginPageState extends State<LoginPage> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
                 const Text(
                   'Simple Queue • Smart Notifications • Happier Farmers',
                   textAlign: TextAlign.center,
