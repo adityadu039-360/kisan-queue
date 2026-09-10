@@ -4,11 +4,11 @@ import 'screens/alerts_page.dart';
 import 'screens/booking_page.dart';
 import 'screens/centre_page.dart';
 import 'screens/home_page.dart';
+import 'screens/login_page.dart';
 import 'screens/profile_page.dart';
 import 'screens/queue_page.dart';
 import 'screens/token_page.dart';
 import 'services/app_language.dart';
-import 'widgets/app_animations.dart';
 
 void main() {
   runApp(const KisanQueueApp());
@@ -27,7 +27,8 @@ class KisanQueueApp extends StatelessWidget {
           title: 'Kisan Queue',
           theme: ThemeData(
             useMaterial3: true,
-            scaffoldBackgroundColor: const Color(0xFFF6F8F4),
+            scaffoldBackgroundColor:
+            const Color(0xFFF6F8F4),
             colorScheme: ColorScheme.fromSeed(
               seedColor: const Color(0xFF287A32),
             ),
@@ -37,18 +38,56 @@ class KisanQueueApp extends StatelessWidget {
               elevation: 0,
             ),
           ),
-          home: const MainNavigation(),
+          home: const LoginPageWrapper(),
         );
       },
     );
   }
 }
 
-class MainNavigation extends StatefulWidget {
-  const MainNavigation({super.key});
+class LoginPageWrapper extends StatefulWidget {
+  const LoginPageWrapper({super.key});
 
   @override
-  State<MainNavigation> createState() => _MainNavigationState();
+  State<LoginPageWrapper> createState() =>
+      _LoginPageWrapperState();
+}
+
+class _LoginPageWrapperState
+    extends State<LoginPageWrapper> {
+  String? farmerId;
+
+  void handleFarmerLogin(String id) {
+    setState(() {
+      farmerId = id;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (farmerId == null) {
+      return LoginPage(
+        onFarmerLogin: handleFarmerLogin,
+      );
+    }
+
+    return MainNavigation(
+      farmerId: farmerId!,
+    );
+  }
+}
+
+class MainNavigation extends StatefulWidget {
+  const MainNavigation({
+    super.key,
+    required this.farmerId,
+  });
+
+  final String farmerId;
+
+  @override
+  State<MainNavigation> createState() =>
+      _MainNavigationState();
 }
 
 class _MainNavigationState extends State<MainNavigation> {
@@ -65,7 +104,7 @@ class _MainNavigationState extends State<MainNavigation> {
   Future<void> openBookingPage() async {
     final result = await Navigator.push(
       context,
-      PremiumPageRoute(
+      MaterialPageRoute(
         builder: (context) => const BookingPage(),
       ),
     );
@@ -78,6 +117,7 @@ class _MainNavigationState extends State<MainNavigation> {
         'centre': result['centre'].toString(),
         'date': result['date'].toString(),
         'time': result['time'].toString(),
+        'farmerId': widget.farmerId,
       };
 
       setState(() {
@@ -90,7 +130,7 @@ class _MainNavigationState extends State<MainNavigation> {
 
       Navigator.push(
         context,
-        PremiumPageRoute(
+        MaterialPageRoute(
           builder: (context) => TokenPage(
             tokenNumber: newBooking['token']!,
             crop: newBooking['crop']!,
@@ -107,7 +147,7 @@ class _MainNavigationState extends State<MainNavigation> {
   void openCentrePage() {
     Navigator.push(
       context,
-      PremiumPageRoute(
+      MaterialPageRoute(
         builder: (context) => CentrePage(
           onBookSlot: openBookingPage,
         ),
@@ -154,30 +194,7 @@ class _MainNavigationState extends State<MainNavigation> {
     }
 
     return Scaffold(
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 650),
-        reverseDuration: const Duration(milliseconds: 450),
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInCubic,
-        transitionBuilder: (child, animation) {
-          final slide = Tween<Offset>(
-            begin: const Offset(0.018, 0),
-            end: Offset.zero,
-          ).animate(animation);
-
-          return FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: slide,
-              child: child,
-            ),
-          );
-        },
-        child: KeyedSubtree(
-          key: ValueKey(currentIndex),
-          child: currentPage,
-        ),
-      ),
+      body: currentPage,
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
         onDestinationSelected: selectPage,
@@ -191,13 +208,21 @@ class _MainNavigationState extends State<MainNavigation> {
             label: AppText.home,
           ),
           NavigationDestination(
-            icon: const Icon(Icons.confirmation_number_outlined),
-            selectedIcon: const Icon(Icons.confirmation_number),
+            icon: const Icon(
+              Icons.confirmation_number_outlined,
+            ),
+            selectedIcon: const Icon(
+              Icons.confirmation_number,
+            ),
             label: AppText.queue,
           ),
           NavigationDestination(
-            icon: const Icon(Icons.notifications_none),
-            selectedIcon: const Icon(Icons.notifications),
+            icon: const Icon(
+              Icons.notifications_none,
+            ),
+            selectedIcon: const Icon(
+              Icons.notifications,
+            ),
             label: AppText.alerts,
           ),
           NavigationDestination(
