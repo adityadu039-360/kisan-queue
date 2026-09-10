@@ -5,13 +5,19 @@ import 'screens/booking_page.dart';
 import 'screens/centre_page.dart';
 import 'screens/home_page.dart';
 import 'screens/login_page.dart';
+import 'screens/owner_dashboard.dart';
 import 'screens/profile_page.dart';
 import 'screens/queue_page.dart';
 import 'screens/token_page.dart';
 import 'services/app_language.dart';
+import 'services/farmer_data.dart';
 import 'services/farmer_session.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await FarmerDataService.instance.loadData();
+
   runApp(const KisanQueueApp());
 }
 
@@ -28,8 +34,7 @@ class KisanQueueApp extends StatelessWidget {
           title: 'Kisan Queue',
           theme: ThemeData(
             useMaterial3: true,
-            scaffoldBackgroundColor:
-            const Color(0xFFF6F8F4),
+            scaffoldBackgroundColor: const Color(0xFFF6F8F4),
             colorScheme: ColorScheme.fromSeed(
               seedColor: const Color(0xFF287A32),
             ),
@@ -50,42 +55,34 @@ class LoginPageWrapper extends StatefulWidget {
   const LoginPageWrapper({super.key});
 
   @override
-  State<LoginPageWrapper> createState() =>
-      _LoginPageWrapperState();
+  State<LoginPageWrapper> createState() => _LoginPageWrapperState();
 }
 
-class _LoginPageWrapperState
-    extends State<LoginPageWrapper> {
+class _LoginPageWrapperState extends State<LoginPageWrapper> {
   FarmerSession? farmerSession;
-  bool loading = true;
 
-  @override
-  void initState() {
-    super.initState();
-    loadSavedSession();
-  }
-
-  Future<void> loadSavedSession() async {
-    final savedSession =
-    await FarmerSessionService.getSession();
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      farmerSession = savedSession;
-      loading = false;
-    });
-  }
+  bool ownerLoggedIn = false;
 
   void handleFarmerLogin(FarmerSession session) {
+    FarmerDataService.instance.registerFarmer(
+      name: session.name,
+      mobile: session.mobile,
+    );
+
     setState(() {
       farmerSession = session;
+      ownerLoggedIn = false;
     });
   }
 
-  Future<void> logout() async {
+  void handleOwnerLogin() {
+    setState(() {
+      ownerLoggedIn = true;
+      farmerSession = null;
+    });
+  }
+
+  Future<void> farmerLogout() async {
     await FarmerSessionService.clearSession();
 
     if (!mounted) {
@@ -97,28 +94,30 @@ class _LoginPageWrapperState
     });
   }
 
+  void ownerLogout() {
+    setState(() {
+      ownerLoggedIn = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return const Scaffold(
-        backgroundColor: Color(0xFFF6F8F4),
-        body: Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFF287A32),
-          ),
-        ),
+    if (ownerLoggedIn) {
+      return OwnerDashboard(
+        onLogout: ownerLogout,
       );
     }
 
     if (farmerSession == null) {
       return LoginPage(
         onFarmerLogin: handleFarmerLogin,
+        onOwnerLogin: handleOwnerLogin,
       );
     }
 
     return MainNavigation(
       farmerSession: farmerSession!,
-      onLogout: logout,
+      onLogout: farmerLogout,
     );
   }
 }
@@ -134,8 +133,7 @@ class MainNavigation extends StatefulWidget {
   final Future<void> Function() onLogout;
 
   @override
-  State<MainNavigation> createState() =>
-      _MainNavigationState();
+  State<MainNavigation> createState() => _MainNavigationState();
 }
 
 class _MainNavigationState extends State<MainNavigation> {
@@ -169,13 +167,24 @@ class _MainNavigationState extends State<MainNavigation> {
         'farmerMobile': widget.farmerSession.mobile,
       };
 
-      setState(() {
-        bookingData = newBooking;
-      });
+      await FarmerDataService.instance.addBooking(
+        token: newBooking['token']!,
+        farmerName: newBooking['farmerName']!,
+        farmerMobile: newBooking['farmerMobile']!,
+        crop: newBooking['crop']!,
+        quantity: newBooking['quantity']!,
+        centre: newBooking['centre']!,
+        date: newBooking['date']!,
+        time: newBooking['time']!,
+      );
 
       if (!mounted) {
         return;
       }
+
+      setState(() {
+        bookingData = newBooking;
+      });
 
       Navigator.push(
         context,
@@ -270,12 +279,8 @@ class _MainNavigationState extends State<MainNavigation> {
             label: AppText.queue,
           ),
           NavigationDestination(
-            icon: const Icon(
-              Icons.notifications_none,
-            ),
-            selectedIcon: const Icon(
-              Icons.notifications,
-            ),
+            icon: const Icon(Icons.notifications_none),
+            selectedIcon: const Icon(Icons.notifications),
             label: AppText.alerts,
           ),
           NavigationDestination(
