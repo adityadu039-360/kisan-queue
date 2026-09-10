@@ -40,6 +40,7 @@ class _LoginPageState extends State<LoginPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -53,8 +54,11 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    if (mobile.length < 10) {
-      showMessage('Please enter a valid mobile number.');
+    if (mobile.length != 10 ||
+        int.tryParse(mobile) == null) {
+      showMessage(
+        'Please enter a valid 10-digit mobile number.',
+      );
       return;
     }
 
@@ -67,6 +71,11 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     final session = FarmerSession(
+      name: name,
+      mobile: mobile,
+    );
+
+    await FarmerSessionService.saveSession(
       name: name,
       mobile: mobile,
     );
@@ -99,7 +108,8 @@ class _LoginPageState extends State<LoginPage> {
     const validOwnerId = '9353371875';
     const validPassword = 'Derive@32';
 
-    if (ownerId != validOwnerId || password != validPassword) {
+    if (ownerId != validOwnerId ||
+        password != validPassword) {
       showMessage('Invalid Owner ID or password.');
       return;
     }
@@ -113,6 +123,14 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     widget.onOwnerLogin();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      isLoading = false;
+    });
   }
 
   Widget roleButton({
@@ -125,7 +143,9 @@ class _LoginPageState extends State<LoginPage> {
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
+          duration: const Duration(
+            milliseconds: 180,
+          ),
           padding: const EdgeInsets.symmetric(
             vertical: 13,
           ),
@@ -136,7 +156,8 @@ class _LoginPageState extends State<LoginPage> {
             borderRadius: BorderRadius.circular(14),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment:
+            MainAxisAlignment.center,
             children: [
               Icon(
                 icon,
@@ -162,6 +183,19 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  InputDecoration inputDecoration({
+    required String label,
+    required IconData icon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon),
+      border: const OutlineInputBorder(),
+      filled: true,
+      fillColor: Colors.white,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -181,7 +215,8 @@ class _LoginPageState extends State<LoginPage> {
                     height: 92,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius:
+                      BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(
@@ -228,28 +263,33 @@ class _LoginPageState extends State<LoginPage> {
                     padding: const EdgeInsets.all(5),
                     decoration: BoxDecoration(
                       color: const Color(0xFFE8EEE7),
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius:
+                      BorderRadius.circular(18),
                     ),
                     child: Row(
                       children: [
                         roleButton(
                           title: 'Farmer',
-                          icon: Icons.person_outline,
+                          icon:
+                          Icons.person_outline,
                           selected: !ownerMode,
                           onTap: () {
                             setState(() {
                               ownerMode = false;
+                              isLoading = false;
                             });
                           },
                         ),
                         const SizedBox(width: 5),
                         roleButton(
                           title: 'Owner',
-                          icon: Icons.admin_panel_settings_outlined,
+                          icon: Icons
+                              .admin_panel_settings_outlined,
                           selected: ownerMode,
                           onTap: () {
                             setState(() {
                               ownerMode = true;
+                              isLoading = false;
                             });
                           },
                         ),
@@ -263,7 +303,8 @@ class _LoginPageState extends State<LoginPage> {
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(22),
+                      borderRadius:
+                      BorderRadius.circular(22),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(
@@ -275,158 +316,8 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                     child: ownerMode
-                        ? Column(
-                      crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Owner credentials',
-                          style: TextStyle(
-                            fontSize: 19,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-
-                        TextField(
-                          controller: ownerIdController,
-                          keyboardType:
-                          TextInputType.number,
-                          decoration:
-                          const InputDecoration(
-                            labelText: 'Owner ID',
-                            prefixIcon: Icon(
-                              Icons.badge_outlined,
-                            ),
-                            border:
-                            OutlineInputBorder(),
-                          ),
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        TextField(
-                          controller:
-                          ownerPasswordController,
-                          obscureText: obscurePassword,
-                          decoration:
-                          InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: const Icon(
-                              Icons.lock_outline,
-                            ),
-                            border:
-                            const OutlineInputBorder(),
-                            suffixIcon: IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  obscurePassword =
-                                  !obscurePassword;
-                                });
-                              },
-                              icon: Icon(
-                                obscurePassword
-                                    ? Icons
-                                    .visibility_outlined
-                                    : Icons
-                                    .visibility_off_outlined,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: FilledButton.icon(
-                            onPressed:
-                            isLoading
-                                ? null
-                                : ownerLogin,
-                            icon: const Icon(
-                              Icons.login,
-                            ),
-                            label: Text(
-                              isLoading
-                                  ? 'Signing in...'
-                                  : 'Owner Login',
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                        : Column(
-                      crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Welcome, Farmer',
-                          style: TextStyle(
-                            fontSize: 19,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
-                        const SizedBox(height: 18),
-
-                        TextField(
-                          controller:
-                          farmerNameController,
-                          textCapitalization:
-                          TextCapitalization.words,
-                          decoration:
-                          const InputDecoration(
-                            labelText: 'Farmer name',
-                            prefixIcon: Icon(
-                              Icons.person_outline,
-                            ),
-                            border:
-                            OutlineInputBorder(),
-                          ),
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        TextField(
-                          controller:
-                          farmerMobileController,
-                          keyboardType:
-                          TextInputType.phone,
-                          decoration:
-                          const InputDecoration(
-                            labelText: 'Mobile number',
-                            prefixIcon: Icon(
-                              Icons.phone_outlined,
-                            ),
-                            border:
-                            OutlineInputBorder(),
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: FilledButton.icon(
-                            onPressed:
-                            isLoading
-                                ? null
-                                : farmerLogin,
-                            icon: const Icon(
-                              Icons.login,
-                            ),
-                            label: Text(
-                              isLoading
-                                  ? 'Signing in...'
-                                  : 'Farmer Login',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                        ? _ownerLoginForm()
+                        : _farmerLoginForm(),
                   ),
 
                   const SizedBox(height: 20),
@@ -447,6 +338,135 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _farmerLoginForm() {
+    return Column(
+      crossAxisAlignment:
+      CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Welcome, Farmer',
+          style: TextStyle(
+            fontSize: 19,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
+        const SizedBox(height: 18),
+
+        TextField(
+          controller: farmerNameController,
+          textCapitalization:
+          TextCapitalization.words,
+          decoration: inputDecoration(
+            label: 'Farmer name',
+            icon: Icons.person_outline,
+          ),
+        ),
+
+        const SizedBox(height: 14),
+
+        TextField(
+          controller: farmerMobileController,
+          keyboardType: TextInputType.phone,
+          maxLength: 10,
+          decoration: inputDecoration(
+            label: 'Mobile number',
+            icon: Icons.phone_outlined,
+          ),
+        ),
+
+        const SizedBox(height: 6),
+
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: FilledButton.icon(
+            onPressed:
+            isLoading ? null : farmerLogin,
+            icon: const Icon(Icons.login),
+            label: Text(
+              isLoading
+                  ? 'Signing in...'
+                  : 'Farmer Login',
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _ownerLoginForm() {
+    return Column(
+      crossAxisAlignment:
+      CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Owner credentials',
+          style: TextStyle(
+            fontSize: 19,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
+        const SizedBox(height: 18),
+
+        TextField(
+          controller: ownerIdController,
+          keyboardType: TextInputType.number,
+          decoration: inputDecoration(
+            label: 'Owner ID',
+            icon: Icons.badge_outlined,
+          ),
+        ),
+
+        const SizedBox(height: 14),
+
+        TextField(
+          controller: ownerPasswordController,
+          obscureText: obscurePassword,
+          decoration: InputDecoration(
+            labelText: 'Password',
+            prefixIcon:
+            const Icon(Icons.lock_outline),
+            border: const OutlineInputBorder(),
+            filled: true,
+            fillColor: Colors.white,
+            suffixIcon: IconButton(
+              onPressed: () {
+                setState(() {
+                  obscurePassword =
+                  !obscurePassword;
+                });
+              },
+              icon: Icon(
+                obscurePassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: FilledButton.icon(
+            onPressed:
+            isLoading ? null : ownerLogin,
+            icon: const Icon(Icons.login),
+            label: Text(
+              isLoading
+                  ? 'Signing in...'
+                  : 'Owner Login',
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
