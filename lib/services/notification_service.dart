@@ -3,62 +3,126 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 class NotificationService {
   NotificationService._();
 
-  static final NotificationService instance = NotificationService._();
+  static final NotificationService instance =
+  NotificationService._();
 
-  final FlutterLocalNotificationsPlugin _plugin =
-      FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin
+  _plugin =
+  FlutterLocalNotificationsPlugin();
 
-  bool _initialized = false;
+  static const String _channelId =
+      'kisan_queue_updates';
+
+  static const String _channelName =
+      'Kisan Queue Updates';
 
   Future<void> initialize() async {
-    if (_initialized) return;
+    const androidSettings =
+    AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
 
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const settings = InitializationSettings(android: androidSettings);
+    const initializationSettings =
+    InitializationSettings(
+      android: androidSettings,
+    );
 
-    await _plugin.initialize(settings);
+    await _plugin.initialize(
+      initializationSettings,
+    );
 
-    const channel = AndroidNotificationChannel(
-      'kisan_queue_updates',
-      'Kisan Queue Updates',
-      description: 'Booking, queue and procurement updates',
+    final androidPlugin =
+    _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+
+    await androidPlugin?.requestNotificationsPermission();
+
+    const channel =
+    AndroidNotificationChannel(
+      _channelId,
+      _channelName,
+      description:
+      'Farmer procurement and queue updates',
       importance: Importance.high,
     );
 
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-    await android?.createNotificationChannel(channel);
-
-    _initialized = true;
+    await androidPlugin?.createNotificationChannel(
+      channel,
+    );
   }
 
-  Future<bool> requestPermission() async {
-    await initialize();
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-    return await android?.requestNotificationsPermission() ?? true;
-  }
-
-  Future<void> show({
+  Future<void> showNotification({
     required int id,
     required String title,
     required String body,
   }) async {
-    await initialize();
-
-    const details = AndroidNotificationDetails(
-      'kisan_queue_updates',
-      'Kisan Queue Updates',
-      channelDescription: 'Booking, queue and procurement updates',
+    const androidDetails =
+    AndroidNotificationDetails(
+      _channelId,
+      _channelName,
+      channelDescription:
+      'Kisan Queue procurement updates',
       importance: Importance.high,
       priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+    );
+
+    const details = NotificationDetails(
+      android: androidDetails,
     );
 
     await _plugin.show(
       id,
       title,
       body,
-      const NotificationDetails(android: details),
+      details,
+    );
+  }
+
+  Future<void> bookingConfirmed({
+    required String token,
+    required String date,
+    required String time,
+  }) async {
+    await showNotification(
+      id: token.hashCode,
+      title: 'Slot Booked Successfully',
+      body:
+      'Token $token booked for $date at $time.',
+    );
+  }
+
+  Future<void> processStepCompleted({
+    required String token,
+    required String step,
+  }) async {
+    await showNotification(
+      id: '${token}_$step'.hashCode,
+      title: 'Procurement Update',
+      body:
+      '$step completed for token $token.',
+    );
+  }
+
+  Future<void> processCompleted({
+    required String token,
+  }) async {
+    await showNotification(
+      id: '${token}_completed'.hashCode,
+      title: 'Process Completed',
+      body:
+      'Procurement process for token $token is completed.',
+    );
+  }
+
+  Future<void> nextFarmerReady({
+    required String token,
+  }) async {
+    await showNotification(
+      id: '${token}_ready'.hashCode,
+      title: 'Your Turn Has Arrived',
+      body:
+      'Token $token is ready. Please check in.',
     );
   }
 }

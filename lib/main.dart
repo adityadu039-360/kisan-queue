@@ -1,236 +1,564 @@
 import 'package:flutter/material.dart';
 
-import 'screens/alerts_page.dart';
-import 'screens/booking_page.dart';
-import 'screens/centre_page.dart';
-import 'screens/home_page.dart';
-import 'screens/login_page.dart';
-import 'screens/owner_dashboard.dart';
-import 'screens/profile_page.dart';
-import 'screens/queue_page.dart';
-import 'screens/token_page.dart';
-import 'services/app_language.dart';
-import 'services/farmer_data.dart';
-import 'services/farmer_session.dart';
-import 'services/notification_service.dart';
-import 'services/permission_service.dart';
+import '../services/farmer_session.dart';
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await FarmerDataService.instance.loadData();
-  await NotificationService.instance.initialize();
-  runApp(const KisanQueueApp());
+class LoginPage extends StatefulWidget {
+  const LoginPage({
+    super.key,
+    required this.onFarmerLogin,
+    required this.onEmployeeLogin,
+  });
+
+  final void Function(FarmerSession session)
+  onFarmerLogin;
+
+  final void Function(String employeeId)
+  onEmployeeLogin;
+
+  @override
+  State<LoginPage> createState() =>
+      _LoginPageState();
 }
 
-class KisanQueueApp extends StatelessWidget {
-  const KisanQueueApp({super.key});
+class _LoginPageState
+    extends State<LoginPage> {
+  bool employeeMode = false;
+  bool obscurePassword = true;
+  bool isLoading = false;
 
-  @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<AppLanguage>(
-      valueListenable: appLanguage,
-      builder: (context, language, child) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'Kisan Queue',
-          theme: ThemeData(
-            useMaterial3: true,
-            scaffoldBackgroundColor: const Color(0xFFF6F8F4),
-            colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF287A32)),
-            inputDecorationTheme: const InputDecorationTheme(
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(),
-            ),
-            appBarTheme: const AppBarTheme(
-              backgroundColor: Color(0xFFF6F8F4),
-              foregroundColor: Color(0xFF172118),
-              elevation: 0,
-            ),
-          ),
-          home: const LoginPageWrapper(),
-        );
-      },
-    );
-  }
-}
+  final farmerNameController =
+  TextEditingController();
 
-class LoginPageWrapper extends StatefulWidget {
-  const LoginPageWrapper({super.key});
-  @override
-  State<LoginPageWrapper> createState() => _LoginPageWrapperState();
-}
+  final farmerMobileController =
+  TextEditingController();
 
-class _LoginPageWrapperState extends State<LoginPageWrapper> {
-  FarmerSession? farmerSession;
-  String? employeeId;
-  bool loading = true;
+  final employeeIdController =
+  TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    restoreSession();
-  }
-
-  Future<void> restoreSession() async {
-    final farmer = await FarmerSessionService.getSession();
-    final employee = await EmployeeSessionService.getSession();
-    if (!mounted) return;
-    setState(() {
-      farmerSession = farmer;
-      employeeId = employee;
-      loading = false;
-    });
-  }
-
-  void handleFarmerLogin(FarmerSession session) {
-    FarmerDataService.instance.registerFarmer(name: session.name, mobile: session.mobile);
-    setState(() {
-      farmerSession = session;
-      employeeId = null;
-    });
-  }
-
-  void handleEmployeeLogin(String id) {
-    setState(() {
-      employeeId = id;
-      farmerSession = null;
-    });
-  }
-
-  Future<void> farmerLogout() async {
-    await FarmerSessionService.clearSession();
-    if (!mounted) return;
-    setState(() => farmerSession = null);
-  }
-
-  Future<void> employeeLogout() async {
-    await EmployeeSessionService.clearSession();
-    if (!mounted) return;
-    setState(() => employeeId = null);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-    if (employeeId != null) {
-      return OwnerDashboard(employeeId: employeeId!, onLogout: employeeLogout);
-    }
-    if (farmerSession != null) {
-      return MainNavigation(farmerSession: farmerSession!, onLogout: farmerLogout);
-    }
-    return LoginPage(onFarmerLogin: handleFarmerLogin, onOwnerLogin: handleEmployeeLogin);
-  }
-}
-
-class MainNavigation extends StatefulWidget {
-  const MainNavigation({super.key, required this.farmerSession, required this.onLogout});
-  final FarmerSession farmerSession;
-  final Future<void> Function() onLogout;
-  @override
-  State<MainNavigation> createState() => _MainNavigationState();
-}
-
-class _MainNavigationState extends State<MainNavigation> {
-  int currentIndex = 0;
-  FarmerBooking? currentBooking;
-
-  @override
-  void initState() {
-    super.initState();
-    syncBooking();
-    FarmerDataService.instance.addListener(syncBooking);
-  }
+  final employeePasswordController =
+  TextEditingController();
 
   @override
   void dispose() {
-    FarmerDataService.instance.removeListener(syncBooking);
+    farmerNameController.dispose();
+    farmerMobileController.dispose();
+    employeeIdController.dispose();
+    employeePasswordController.dispose();
     super.dispose();
   }
 
-  void syncBooking() {
-    final list = FarmerDataService.instance.bookings
-        .where((b) => b.farmerMobile == widget.farmerSession.mobile)
-        .toList();
-    if (mounted) setState(() => currentBooking = list.isEmpty ? null : list.last);
+  void showMessage(
+      String message,
+      ) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior:
+        SnackBarBehavior.floating,
+      ),
+    );
   }
 
-  void selectPage(int index) => setState(() => currentIndex = index);
+  Future<void> farmerLogin() async {
+    final name =
+    farmerNameController.text.trim();
 
-  Future<void> openBookingPage() async {
-    final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => const BookingPage()));
-    if (result is! Map) return;
+    final mobile =
+    farmerMobileController.text.trim();
 
-    final location = await PermissionService.getCurrentLocation();
-    final booking = <String, String>{
-      'token': result['token'].toString(),
-      'crop': result['crop'].toString(),
-      'quantity': result['quantity'].toString(),
-      'centre': result['centre'].toString(),
-      'date': result['date'].toString(),
-      'time': result['time'].toString(),
-      'farmerName': widget.farmerSession.name,
-      'farmerMobile': widget.farmerSession.mobile,
-    };
+    if (name.isEmpty) {
+      showMessage(
+        'Please enter farmer name.',
+      );
+      return;
+    }
 
-    await FarmerDataService.instance.addBooking(
-      token: booking['token']!, farmerName: booking['farmerName']!, farmerMobile: booking['farmerMobile']!,
-      crop: booking['crop']!, quantity: booking['quantity']!, centre: booking['centre']!,
-      date: booking['date']!, time: booking['time']!, latitude: location?.latitude, longitude: location?.longitude,
+    if (mobile.length != 10 ||
+        int.tryParse(mobile) == null) {
+      showMessage(
+        'Please enter a valid 10-digit mobile number.',
+      );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    final session = FarmerSession(
+      name: name,
+      mobile: mobile,
     );
 
-    await NotificationService.instance.show(
-      id: booking['token'].hashCode,
-      title: 'Slot Booked Successfully',
-      body: 'Official update: ${booking['token']} is booked for ${booking['date']} at ${booking['time']}.',
+    await FarmerSessionService
+        .saveFarmerSession(
+      name: name,
+      mobile: mobile,
     );
 
-    if (!mounted) return;
-    Navigator.push(context, MaterialPageRoute(builder: (_) => TokenPage(
-      tokenNumber: booking['token']!, crop: booking['crop']!, quantity: booking['quantity']!,
-      centre: booking['centre']!, date: booking['date']!, time: booking['time']!,
-    )));
+    widget.onFarmerLogin(session);
   }
 
-  void openCentrePage() => Navigator.push(context, MaterialPageRoute(builder: (_) => CentrePage(onBookSlot: openBookingPage)));
+  Future<void> employeeLogin() async {
+    final employeeId =
+    employeeIdController.text.trim();
+
+    final password =
+        employeePasswordController.text;
+
+    if (employeeId.isEmpty) {
+      showMessage(
+        'Please enter Employee ID.',
+      );
+      return;
+    }
+
+    if (password.isEmpty) {
+      showMessage(
+        'Please enter password.',
+      );
+      return;
+    }
+
+    const validEmployeeId =
+        '9353371875';
+
+    const validPassword =
+        'Derive@32';
+
+    if (employeeId != validEmployeeId ||
+        password != validPassword) {
+      showMessage(
+        'Invalid Employee ID or password.',
+      );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    await FarmerSessionService
+        .saveEmployeeSession(
+      employeeId: employeeId,
+    );
+
+    widget.onEmployeeLogin(
+      employeeId,
+    );
+  }
+
+  Widget roleButton({
+    required String title,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration:
+          const Duration(
+            milliseconds: 180,
+          ),
+          padding:
+          const EdgeInsets.symmetric(
+            vertical: 13,
+          ),
+          decoration:
+          BoxDecoration(
+            color: selected
+                ? const Color(
+              0xFF287A32,
+            )
+                : Colors.white,
+            borderRadius:
+            BorderRadius.circular(
+              14,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment:
+            MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: selected
+                    ? Colors.white
+                    : const Color(
+                  0xFF287A32,
+                ),
+              ),
+              const SizedBox(
+                width: 8,
+              ),
+              Text(
+                title,
+                style:
+                TextStyle(
+                  color: selected
+                      ? Colors.white
+                      : const Color(
+                    0xFF172118,
+                  ),
+                  fontWeight:
+                  FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  InputDecoration decoration({
+    required String label,
+    required IconData icon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon),
+      border:
+      const OutlineInputBorder(),
+      filled: true,
+      fillColor: Colors.white,
+    );
+  }
 
   @override
-  Widget build(BuildContext context) {
-    Widget page;
-    switch (currentIndex) {
-      case 1:
-        page = QueuePage(bookingData: currentBooking);
-        break;
-      case 2:
-        page = AlertsPage(bookingData: currentBooking);
-        break;
-      case 3:
-        page = ProfilePage(farmerName: widget.farmerSession.name, farmerMobile: widget.farmerSession.mobile, onLogout: widget.onLogout);
-        break;
-      default:
-        page = HomePage(
-          onBookSlot: openBookingPage, onQueue: () => selectPage(1), onAlerts: () => selectPage(2),
-          onProfile: () => selectPage(3), onCentres: openCentrePage,
-          bookingData: currentBooking == null ? null : {
-            'token': currentBooking!.token, 'crop': currentBooking!.crop, 'quantity': currentBooking!.quantity,
-            'centre': currentBooking!.centre, 'date': currentBooking!.date, 'time': currentBooking!.time,
-          },
-        );
-    }
+  Widget build(
+      BuildContext context,
+      ) {
     return Scaffold(
-      body: page,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: currentIndex, onDestinationSelected: selectPage,
-        backgroundColor: Colors.white, indicatorColor: const Color(0xFFDDF1DF),
-        destinations: [
-          NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home), label: AppText.home),
-          NavigationDestination(icon: const Icon(Icons.confirmation_number_outlined), selectedIcon: const Icon(Icons.confirmation_number), label: AppText.queue),
-          NavigationDestination(icon: const Icon(Icons.notifications_none), selectedIcon: const Icon(Icons.notifications), label: AppText.alerts),
-          NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: AppText.profile),
-        ],
+      backgroundColor:
+      const Color(0xFFF6F8F4),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding:
+            const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints:
+              const BoxConstraints(
+                maxWidth: 430,
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: 92,
+                    height: 92,
+                    padding:
+                    const EdgeInsets.all(
+                      10,
+                    ),
+                    decoration:
+                    BoxDecoration(
+                      color: Colors.white,
+                      borderRadius:
+                      BorderRadius.circular(
+                        24,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black
+                              .withValues(
+                            alpha: 0.08,
+                          ),
+                          blurRadius: 18,
+                          offset:
+                          const Offset(
+                            0,
+                            8,
+                          ),
+                        ),
+                      ],
+                    ),
+                    child:
+                    Image.asset(
+                      'assets/logo/kisan_queue_logo.jpeg',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 22,
+                  ),
+                  const Text(
+                    'Kisan Queue',
+                    style:
+                    TextStyle(
+                      fontSize: 30,
+                      fontWeight:
+                      FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 6,
+                  ),
+                  Text(
+                    employeeMode
+                        ? 'Procurement Employee Login'
+                        : 'Farmer Login',
+                    style:
+                    const TextStyle(
+                      color:
+                      Colors.black54,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 26,
+                  ),
+                  Container(
+                    padding:
+                    const EdgeInsets.all(
+                      5,
+                    ),
+                    decoration:
+                    BoxDecoration(
+                      color:
+                      const Color(
+                        0xFFE8EEE7,
+                      ),
+                      borderRadius:
+                      BorderRadius.circular(
+                        18,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        roleButton(
+                          title: 'Farmer',
+                          icon:
+                          Icons.person_outline,
+                          selected:
+                          !employeeMode,
+                          onTap: () {
+                            setState(() {
+                              employeeMode =
+                              false;
+                              isLoading =
+                              false;
+                            });
+                          },
+                        ),
+                        const SizedBox(
+                          width: 5,
+                        ),
+                        roleButton(
+                          title: 'Employee',
+                          icon: Icons
+                              .badge_outlined,
+                          selected:
+                          employeeMode,
+                          onTap: () {
+                            setState(() {
+                              employeeMode =
+                              true;
+                              isLoading =
+                              false;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 22,
+                  ),
+                  Container(
+                    padding:
+                    const EdgeInsets.all(
+                      20,
+                    ),
+                    decoration:
+                    BoxDecoration(
+                      color: Colors.white,
+                      borderRadius:
+                      BorderRadius.circular(
+                        22,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black
+                              .withValues(
+                            alpha: 0.05,
+                          ),
+                          blurRadius: 18,
+                          offset:
+                          const Offset(
+                            0,
+                            7,
+                          ),
+                        ),
+                      ],
+                    ),
+                    child: employeeMode
+                        ? _employeeForm()
+                        : _farmerForm(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
+    );
+  }
+
+  Widget _farmerForm() {
+    return Column(
+      crossAxisAlignment:
+      CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Welcome, Farmer',
+          style:
+          TextStyle(
+            fontSize: 19,
+            fontWeight:
+            FontWeight.w800,
+          ),
+        ),
+        const SizedBox(
+          height: 18,
+        ),
+        TextField(
+          controller:
+          farmerNameController,
+          textCapitalization:
+          TextCapitalization.words,
+          decoration: decoration(
+            label: 'Farmer name',
+            icon:
+            Icons.person_outline,
+          ),
+        ),
+        const SizedBox(
+          height: 14,
+        ),
+        TextField(
+          controller:
+          farmerMobileController,
+          keyboardType:
+          TextInputType.phone,
+          maxLength: 10,
+          decoration: decoration(
+            label: 'Mobile number',
+            icon:
+            Icons.phone_outlined,
+          ),
+        ),
+        const SizedBox(
+          height: 8,
+        ),
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: FilledButton.icon(
+            onPressed:
+            isLoading
+                ? null
+                : farmerLogin,
+            icon: const Icon(
+              Icons.login,
+            ),
+            label: const Text(
+              'Farmer Login',
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _employeeForm() {
+    return Column(
+      crossAxisAlignment:
+      CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Employee Access',
+          style:
+          TextStyle(
+            fontSize: 19,
+            fontWeight:
+            FontWeight.w800,
+          ),
+        ),
+        const SizedBox(
+          height: 18,
+        ),
+        TextField(
+          controller:
+          employeeIdController,
+          keyboardType:
+          TextInputType.number,
+          decoration: decoration(
+            label: 'Employee ID',
+            icon:
+            Icons.badge_outlined,
+          ),
+        ),
+        const SizedBox(
+          height: 14,
+        ),
+        TextField(
+          controller:
+          employeePasswordController,
+          obscureText:
+          obscurePassword,
+          decoration:
+          InputDecoration(
+            labelText: 'Password',
+            prefixIcon:
+            const Icon(
+              Icons.lock_outline,
+            ),
+            suffixIcon:
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  obscurePassword =
+                  !obscurePassword;
+                });
+              },
+              icon: Icon(
+                obscurePassword
+                    ? Icons
+                    .visibility_outlined
+                    : Icons
+                    .visibility_off_outlined,
+              ),
+            ),
+            border:
+            const OutlineInputBorder(),
+            filled: true,
+            fillColor:
+            Colors.white,
+          ),
+        ),
+        const SizedBox(
+          height: 20,
+        ),
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: FilledButton.icon(
+            onPressed:
+            isLoading
+                ? null
+                : employeeLogin,
+            icon: const Icon(
+              Icons.login,
+            ),
+            label: const Text(
+              'Employee Login',
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
