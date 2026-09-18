@@ -1,401 +1,105 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
-class QueuePage extends StatefulWidget {
-  const QueuePage({
-    super.key,
-    required this.bookingData,
-  });
+import '../services/farmer_data.dart';
 
-  final Map<String, String>? bookingData;
-
-  @override
-  State<QueuePage> createState() => _QueuePageState();
-}
-
-class _QueuePageState extends State<QueuePage> {
-  Timer? queueTimer;
-
-  int farmersAhead = 12;
-  int estimatedMinutes = 45;
-
-  @override
-  void initState() {
-    super.initState();
-
-    if (widget.bookingData != null) {
-      queueTimer = Timer.periodic(
-        const Duration(seconds: 20),
-            (_) {
-          if (!mounted) {
-            return;
-          }
-
-          if (farmersAhead > 0) {
-            setState(() {
-              farmersAhead--;
-              estimatedMinutes =
-                  farmersAhead * 4;
-            });
-          }
-        },
-      );
-    }
-  }
-
-  @override
-  void dispose() {
-    queueTimer?.cancel();
-    super.dispose();
-  }
+class QueuePage extends StatelessWidget {
+  const QueuePage({super.key, required this.bookingData});
+  final FarmerBooking? bookingData;
 
   @override
   Widget build(BuildContext context) {
-    final booking = widget.bookingData;
-
-    if (booking == null) {
-      return Scaffold(
-        backgroundColor: const Color(0xFFF6F8F4),
-        appBar: AppBar(
-          title: const Text(
-            'Live Queue',
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(30),
-            child: Column(
-              mainAxisAlignment:
-              MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 86,
-                  height: 86,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEAF5EB),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.queue_outlined,
-                    size: 44,
-                    color: Color(0xFF287A32),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'No Active Booking',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Book a procurement slot to see your live queue position.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Color(0xFF687268),
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+    if (bookingData == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF6F8F4),
+        appBar: AppBar(title: Text('My Procurement Process')),
+        body: Center(child: Text('No active booking. Book a slot to start.')),
       );
     }
 
-    final token = booking['token'] ?? '—';
-    final crop = booking['crop'] ?? '—';
-    final quantity = booking['quantity'] ?? '—';
-    final centre = booking['centre'] ?? '—';
-    final date = booking['date'] ?? '—';
-    final time = booking['time'] ?? '—';
+    final booking = bookingData!;
+    final service = FarmerDataService.instance;
+    final ahead = service.bookings.indexWhere((b) => b.token == booking.token).clamp(0, service.bookings.length);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8F4),
-      appBar: AppBar(
-        title: const Text(
-          'Live Queue',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
+      appBar: AppBar(title: const Text('My Procurement Process', style: TextStyle(fontWeight: FontWeight.w800))),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(18, 10, 18, 30),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(color: const Color(0xFF287A32), borderRadius: BorderRadius.circular(24)),
+            child: Row(children: [
+              const Icon(Icons.confirmation_number_rounded, color: Colors.white, size: 42),
+              const SizedBox(width: 16),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('Your Token', style: TextStyle(color: Colors.white70)),
+                const SizedBox(height: 3),
+                Text(booking.token, style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 6),
+                Text('${booking.crop} • ${booking.quantity} kg', style: const TextStyle(color: Colors.white70)),
+              ])),
+            ]),
           ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          20,
-          10,
-          20,
-          30,
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: const Color(0xFF287A32),
-                borderRadius:
-                BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(
-                      alpha: 0.08,
-                    ),
-                    blurRadius: 18,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  const Text(
-                    'Your Token',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    token,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 38,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Container(
-                    padding:
-                    const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(
-                        alpha: 0.14,
-                      ),
-                      borderRadius:
-                      BorderRadius.circular(14),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.circle,
-                          size: 10,
-                          color: Colors.white,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Booking Active',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight:
-                            FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius:
-                BorderRadius.circular(22),
-                border: Border.all(
-                  color: Colors.grey.shade200,
-                ),
-              ),
-              child: Column(
-                children: [
-                  const Text(
-                    'Farmers Ahead of You',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF687268),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '$farmersAhead',
-                    style: const TextStyle(
-                      fontSize: 48,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF287A32),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Estimated wait: $estimatedMinutes minutes',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            _InfoCard(
-              icon: Icons.location_on_outlined,
-              title: 'Procurement Centre',
-              value: centre,
-            ),
-
-            const SizedBox(height: 12),
-
-            _InfoCard(
-              icon: Icons.grass_outlined,
-              title: 'Crop',
-              value: crop,
-            ),
-
-            const SizedBox(height: 12),
-
-            _InfoCard(
-              icon: Icons.scale_outlined,
-              title: 'Quantity',
-              value: quantity,
-            ),
-
-            const SizedBox(height: 12),
-
-            _InfoCard(
-              icon: Icons.calendar_today_outlined,
-              title: 'Date',
-              value: date,
-            ),
-
-            const SizedBox(height: 12),
-
-            _InfoCard(
-              icon: Icons.access_time_outlined,
-              title: 'Time Slot',
-              value: time,
-            ),
-
-            const SizedBox(height: 22),
-
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEAF5EB),
-                borderRadius:
-                BorderRadius.circular(16),
-              ),
-              child: const Row(
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.notifications_active_outlined,
-                    color: Color(0xFF287A32),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Keep an eye on the queue. You will be able to see your position as the queue moves.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        height: 1.5,
-                        color: Color(0xFF287A32),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+            child: Row(children: [
+              const Icon(Icons.people_alt_outlined, color: Color(0xFF287A32)),
+              const SizedBox(width: 12),
+              Expanded(child: Text('Queue position: ${ahead + 1}', style: const TextStyle(fontWeight: FontWeight.w700))),
+              Text('~${ahead * 5} min', style: const TextStyle(color: Color(0xFF287A32), fontWeight: FontWeight.w800)),
+            ]),
+          ),
+          const SizedBox(height: 22),
+          const Text('5-step procurement process', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 12),
+          ...List.generate(FarmerDataService.statusSteps.length, (i) {
+            final completed = booking.statusIndex > i;
+            final current = booking.statusIndex == i;
+            return _StepTile(number: i + 1, title: FarmerDataService.statusSteps[i], completed: completed, current: current);
+          }),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: const Color(0xFFEAF5EB), borderRadius: BorderRadius.circular(18)),
+            child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(Icons.notifications_active_outlined, color: Color(0xFF287A32)),
+              SizedBox(width: 10),
+              Expanded(child: Text('Employee updates each step. You will receive an app notification and message update when your status changes.', style: TextStyle(height: 1.45, color: Color(0xFF287A32)))),
+            ]),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _InfoCard extends StatelessWidget {
-  const _InfoCard({
-    required this.icon,
-    required this.title,
-    required this.value,
-  });
-
-  final IconData icon;
+class _StepTile extends StatelessWidget {
+  const _StepTile({required this.number, required this.title, required this.completed, required this.current});
+  final int number;
   final String title;
-  final String value;
+  final bool completed;
+  final bool current;
 
   @override
   Widget build(BuildContext context) {
+    final active = completed || current;
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(17),
-        border: Border.all(
-          color: Colors.grey.shade200,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: active ? const Color(0xFFB9DDBD) : Colors.grey.shade200)),
+      child: Row(children: [
+        Container(
+          width: 42, height: 42,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: completed ? const Color(0xFF287A32) : const Color(0xFFEAF5EB)),
+          child: Center(child: completed ? const Icon(Icons.check, color: Colors.white, size: 22) : Text('$number', style: const TextStyle(color: Color(0xFF287A32), fontWeight: FontWeight.w900))),
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEAF5EB),
-              borderRadius:
-              BorderRadius.circular(13),
-            ),
-            child: Icon(
-              icon,
-              color: const Color(0xFF287A32),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-              CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF172118),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        const SizedBox(width: 14),
+        Expanded(child: Text(title, style: TextStyle(fontWeight: FontWeight.w800, color: active ? const Color(0xFF172118) : Colors.black45))),
+        if (completed) const Icon(Icons.verified_rounded, color: Color(0xFF287A32)) else if (current) const Text('NEXT', style: TextStyle(color: Color(0xFF287A32), fontSize: 11, fontWeight: FontWeight.w900)),
+      ]),
     );
   }
 }

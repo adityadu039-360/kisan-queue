@@ -1,0 +1,7 @@
+Add these permissions near the top of android/app/src/main/AndroidManifest.xml, directly inside <manifest>:
+
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+The app requests notification and location permission at login. Android still lets the user deny a permission; the app cannot force an OS permission to ON.

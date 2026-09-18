@@ -4,31 +4,25 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FarmerRecord {
-  FarmerRecord({
-    required this.name,
-    required this.mobile,
-    required this.lastLogin,
-  });
-
+  FarmerRecord({required this.name, required this.mobile, required this.lastLogin});
   final String name;
   final String mobile;
   final String lastLogin;
+  Map<String, dynamic> toMap() => {'name': name, 'mobile': mobile, 'lastLogin': lastLogin};
+  factory FarmerRecord.fromMap(Map<String, dynamic> m) => FarmerRecord(
+        name: m['name']?.toString() ?? '', mobile: m['mobile']?.toString() ?? '', lastLogin: m['lastLogin']?.toString() ?? '');
+}
 
-  Map<String, dynamic> toMap() {
-    return {
-      'name': name,
-      'mobile': mobile,
-      'lastLogin': lastLogin,
-    };
-  }
-
-  factory FarmerRecord.fromMap(Map<String, dynamic> map) {
-    return FarmerRecord(
-      name: map['name']?.toString() ?? '',
-      mobile: map['mobile']?.toString() ?? '',
-      lastLogin: map['lastLogin']?.toString() ?? '',
-    );
-  }
+class FarmerMessage {
+  FarmerMessage({required this.id, required this.mobile, required this.title, required this.body, required this.createdAt});
+  final String id;
+  final String mobile;
+  final String title;
+  final String body;
+  final String createdAt;
+  Map<String, dynamic> toMap() => {'id': id, 'mobile': mobile, 'title': title, 'body': body, 'createdAt': createdAt};
+  factory FarmerMessage.fromMap(Map<String, dynamic> m) => FarmerMessage(
+        id: m['id']?.toString() ?? '', mobile: m['mobile']?.toString() ?? '', title: m['title']?.toString() ?? '', body: m['body']?.toString() ?? '', createdAt: m['createdAt']?.toString() ?? '');
 }
 
 class FarmerBooking {
@@ -41,6 +35,9 @@ class FarmerBooking {
     required this.centre,
     required this.date,
     required this.time,
+    this.statusIndex = 0,
+    this.latitude,
+    this.longitude,
   });
 
   final String token;
@@ -51,293 +48,170 @@ class FarmerBooking {
   final String centre;
   final String date;
   final String time;
+  int statusIndex;
+  final double? latitude;
+  final double? longitude;
 
-  Map<String, dynamic> toMap() {
-    return {
-      'token': token,
-      'farmerName': farmerName,
-      'farmerMobile': farmerMobile,
-      'crop': crop,
-      'quantity': quantity,
-      'centre': centre,
-      'date': date,
-      'time': time,
-    };
-  }
+  Map<String, dynamic> toMap() => {
+        'token': token, 'farmerName': farmerName, 'farmerMobile': farmerMobile,
+        'crop': crop, 'quantity': quantity, 'centre': centre, 'date': date,
+        'time': time, 'statusIndex': statusIndex, 'latitude': latitude, 'longitude': longitude,
+      };
 
-  factory FarmerBooking.fromMap(Map<String, dynamic> map) {
-    return FarmerBooking(
-      token: map['token']?.toString() ?? '',
-      farmerName: map['farmerName']?.toString() ?? '',
-      farmerMobile: map['farmerMobile']?.toString() ?? '',
-      crop: map['crop']?.toString() ?? '',
-      quantity: map['quantity']?.toString() ?? '',
-      centre: map['centre']?.toString() ?? '',
-      date: map['date']?.toString() ?? '',
-      time: map['time']?.toString() ?? '',
-    );
-  }
+  factory FarmerBooking.fromMap(Map<String, dynamic> m) => FarmerBooking(
+        token: m['token']?.toString() ?? '', farmerName: m['farmerName']?.toString() ?? '',
+        farmerMobile: m['farmerMobile']?.toString() ?? '', crop: m['crop']?.toString() ?? '',
+        quantity: m['quantity']?.toString() ?? '', centre: m['centre']?.toString() ?? '',
+        date: m['date']?.toString() ?? '', time: m['time']?.toString() ?? '',
+        statusIndex: int.tryParse(m['statusIndex']?.toString() ?? '') ?? 0,
+        latitude: double.tryParse(m['latitude']?.toString() ?? ''),
+        longitude: double.tryParse(m['longitude']?.toString() ?? ''),
+      );
 }
 
 class FarmerDataService extends ChangeNotifier {
   FarmerDataService._();
+  static final instance = FarmerDataService._();
 
-  static final FarmerDataService instance =
-  FarmerDataService._();
-
-  static const String _farmersKey = 'farmers_data';
-  static const String _bookingsKey = 'farmer_bookings';
-  static const String _cropsKey = 'procurement_crops';
-  static const String _totalSlotsKey =
-      'procurement_total_slots';
-  static const String _tokenCounterKey =
-      'procurement_token_counter';
+  static const _farmersKey = 'farmers_data';
+  static const _bookingsKey = 'farmer_bookings';
+  static const _messagesKey = 'farmer_messages';
+  static const _cropsKey = 'procurement_crops';
+  static const _totalSlotsKey = 'procurement_total_slots';
+  static const _tokenCounterKey = 'procurement_token_counter';
 
   List<FarmerRecord> _farmers = [];
   List<FarmerBooking> _bookings = [];
-
-  List<String> _crops = [
-    'Wheat',
-    'Rice',
-    'Maize',
-    'Soybean',
-  ];
-
+  List<FarmerMessage> _messages = [];
+  List<String> _crops = ['Wheat', 'Rice', 'Maize', 'Soybean'];
   int _totalSlots = 50;
   int _tokenCounter = 100;
 
-  List<FarmerRecord> get farmers =>
-      List.unmodifiable(_farmers);
-
-  List<FarmerBooking> get bookings =>
-      List.unmodifiable(_bookings);
-
-  List<String> get crops =>
-      List.unmodifiable(_crops);
-
+  List<FarmerRecord> get farmers => List.unmodifiable(_farmers);
+  List<FarmerBooking> get bookings => List.unmodifiable(_bookings);
+  List<FarmerMessage> messagesFor(String mobile) => List.unmodifiable(_messages.where((m) => m.mobile == mobile).toList().reversed);
+  List<String> get crops => List.unmodifiable(_crops);
   int get totalSlots => _totalSlots;
-
   int get bookedSlots => _bookings.length;
+  int get availableSlots => (_totalSlots - _bookings.length).clamp(0, _totalSlots);
 
-  int get availableSlots {
-    final available = _totalSlots - _bookings.length;
-
-    return available < 0 ? 0 : available;
-  }
+  static const statusSteps = [
+    'Process Started',
+    'Quality Checked',
+    'Price Confirmed',
+    'Weight Confirmed',
+    'Process Completed',
+  ];
 
   Future<void> loadData() async {
-    final prefs =
-    await SharedPreferences.getInstance();
-
-    final farmersJson =
-    prefs.getString(_farmersKey);
-
-    if (farmersJson != null &&
-        farmersJson.isNotEmpty) {
-      try {
-        final decoded =
-        jsonDecode(farmersJson);
-
-        if (decoded is List) {
-          _farmers = decoded
-              .whereType<Map>()
-              .map(
-                (item) => FarmerRecord.fromMap(
-              Map<String, dynamic>.from(item),
-            ),
-          )
-              .toList();
-        }
-      } catch (_) {
-        _farmers = [];
-      }
-    }
-
-    final bookingsJson =
-    prefs.getString(_bookingsKey);
-
-    if (bookingsJson != null &&
-        bookingsJson.isNotEmpty) {
-      try {
-        final decoded =
-        jsonDecode(bookingsJson);
-
-        if (decoded is List) {
-          _bookings = decoded
-              .whereType<Map>()
-              .map(
-                (item) => FarmerBooking.fromMap(
-              Map<String, dynamic>.from(item),
-            ),
-          )
-              .toList();
-        }
-      } catch (_) {
-        _bookings = [];
-      }
-    }
-
-    final savedCrops =
-    prefs.getStringList(_cropsKey);
-
-    if (savedCrops != null &&
-        savedCrops.isNotEmpty) {
-      _crops = List<String>.from(savedCrops);
-    }
-
-    _totalSlots =
-        prefs.getInt(_totalSlotsKey) ?? 50;
-
-    _tokenCounter =
-        prefs.getInt(_tokenCounterKey) ?? 100;
-
+    final prefs = await SharedPreferences.getInstance();
+    _farmers = _decodeList(prefs.getString(_farmersKey), FarmerRecord.fromMap);
+    _bookings = _decodeList(prefs.getString(_bookingsKey), FarmerBooking.fromMap);
+    _messages = _decodeList(prefs.getString(_messagesKey), FarmerMessage.fromMap);
+    _crops = prefs.getStringList(_cropsKey) ?? _crops;
+    _totalSlots = prefs.getInt(_totalSlotsKey) ?? 50;
+    _tokenCounter = prefs.getInt(_tokenCounterKey) ?? 100;
     notifyListeners();
   }
 
-  Future<void> registerFarmer({
-    required String name,
-    required String mobile,
-  }) async {
-    final now = DateTime.now().toIso8601String();
+  List<T> _decodeList<T>(String? raw, T Function(Map<String, dynamic>) factory) {
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is List) {
+        return decoded.whereType<Map>().map((e) => factory(Map<String, dynamic>.from(e))).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
 
-    final index = _farmers.indexWhere(
-          (farmer) => farmer.mobile == mobile,
-    );
-
-    final farmer = FarmerRecord(
-      name: name,
-      mobile: mobile,
-      lastLogin: now,
-    );
-
-    if (index >= 0) {
-      _farmers[index] = farmer;
-    } else {
-      _farmers.add(farmer);
-    }
-
+  Future<void> registerFarmer({required String name, required String mobile}) async {
+    final record = FarmerRecord(name: name, mobile: mobile, lastLogin: DateTime.now().toIso8601String());
+    final i = _farmers.indexWhere((f) => f.mobile == mobile);
+    if (i >= 0) _farmers[i] = record; else _farmers.add(record);
     await _saveFarmers();
-
-    notifyListeners();
-  }
-
-  Future<void> addBooking({
-    required String token,
-    required String farmerName,
-    required String farmerMobile,
-    required String crop,
-    required String quantity,
-    required String centre,
-    required String date,
-    required String time,
-  }) async {
-    final booking = FarmerBooking(
-      token: token,
-      farmerName: farmerName,
-      farmerMobile: farmerMobile,
-      crop: crop,
-      quantity: quantity,
-      centre: centre,
-      date: date,
-      time: time,
-    );
-
-    _bookings.add(booking);
-
-    await _saveBookings();
-
     notifyListeners();
   }
 
   String nextToken() {
     _tokenCounter++;
-
     _saveTokenCounter();
-
     return 'KQ-$_tokenCounter';
   }
 
-  Future<void> updateCrops(
-      List<String> crops,
-      ) async {
-    final cleanedCrops = crops
-        .map((crop) => crop.trim())
-        .where((crop) => crop.isNotEmpty)
-        .toSet()
-        .toList();
-
-    if (cleanedCrops.isEmpty) {
-      return;
-    }
-
-    _crops = cleanedCrops;
-
-    final prefs =
-    await SharedPreferences.getInstance();
-
-    await prefs.setStringList(
-      _cropsKey,
-      _crops,
-    );
-
+  Future<void> addBooking({
+    required String token, required String farmerName, required String farmerMobile,
+    required String crop, required String quantity, required String centre,
+    required String date, required String time, double? latitude, double? longitude,
+  }) async {
+    _bookings.add(FarmerBooking(token: token, farmerName: farmerName, farmerMobile: farmerMobile, crop: crop,
+        quantity: quantity, centre: centre, date: date, time: time, latitude: latitude, longitude: longitude));
+    await _saveBookings();
+    await addMessage(farmerMobile, 'Slot Booked Successfully',
+        'Official update: your procurement slot $token is booked at $centre for $date, $time. Please arrive on time.');
     notifyListeners();
   }
 
-  Future<void> updateTotalSlots(
-      int totalSlots,
-      ) async {
-    if (totalSlots <= 0) {
-      return;
+  Future<void> updateBookingStatus(FarmerBooking booking) async {
+    if (booking.statusIndex >= statusSteps.length) return;
+    booking.statusIndex++;
+    final step = statusSteps[booking.statusIndex - 1];
+    await _saveBookings();
+    await addMessage(booking.farmerMobile, '$step ✓',
+        'Official update: ${booking.token} — $step is completed.');
+    if (booking.statusIndex == 1) {
+      final i = _bookings.indexWhere((b) => b.token == booking.token);
+      final next = i >= 0 && i + 5 < _bookings.length ? _bookings[i + 5] : null;
+      if (next != null) {
+        await addMessage(next.farmerMobile, 'Queue Update',
+            'Token ${booking.token} has checked in. Your token ${next.token} is coming up. Please get ready at the procurement centre.');
+      }
     }
-
-    _totalSlots = totalSlots;
-
-    final prefs =
-    await SharedPreferences.getInstance();
-
-    await prefs.setInt(
-      _totalSlotsKey,
-      _totalSlots,
-    );
-
+    if (booking.statusIndex == statusSteps.length) {
+      final i = _bookings.indexWhere((b) => b.token == booking.token);
+      await addMessage(booking.farmerMobile, 'Process Completed ✓',
+          'Official update: your procurement process for ${booking.token} is completed. Thank you.');
+      final next = i >= 0 && i + 1 < _bookings.length ? _bookings[i + 1] : null;
+      if (next != null && next.statusIndex == 0) {
+        await addMessage(next.farmerMobile, 'Your Turn Has Arrived',
+            'Token ${next.token}, your turn has arrived. Please check in at the procurement centre.');
+      }
+    }
     notifyListeners();
   }
 
-  Future<void> _saveFarmers() async {
-    final prefs =
-    await SharedPreferences.getInstance();
-
-    final data = _farmers
-        .map((farmer) => farmer.toMap())
-        .toList();
-
-    await prefs.setString(
-      _farmersKey,
-      jsonEncode(data),
-    );
+  Future<void> addMessage(String mobile, String title, String body) async {
+    _messages.add(FarmerMessage(id: '${DateTime.now().microsecondsSinceEpoch}', mobile: mobile,
+        title: title, body: body, createdAt: DateTime.now().toIso8601String()));
+    await _saveMessages();
   }
 
-  Future<void> _saveBookings() async {
-    final prefs =
-    await SharedPreferences.getInstance();
-
-    final data = _bookings
-        .map((booking) => booking.toMap())
-        .toList();
-
-    await prefs.setString(
-      _bookingsKey,
-      jsonEncode(data),
-    );
+  Future<void> updateCrops(List<String> crops) async {
+    final clean = crops.map((e) => e.trim()).where((e) => e.isNotEmpty).toSet().toList();
+    if (clean.isEmpty) return;
+    _crops = clean;
+    final p = await SharedPreferences.getInstance();
+    await p.setStringList(_cropsKey, _crops);
+    notifyListeners();
   }
 
+  Future<void> updateTotalSlots(int slots) async {
+    if (slots <= 0) return;
+    _totalSlots = slots;
+    final p = await SharedPreferences.getInstance();
+    await p.setInt(_totalSlotsKey, slots);
+    notifyListeners();
+  }
+
+  Future<void> _saveFarmers() async => _setJson(_farmersKey, _farmers.map((e) => e.toMap()).toList());
+  Future<void> _saveBookings() async => _setJson(_bookingsKey, _bookings.map((e) => e.toMap()).toList());
+  Future<void> _saveMessages() async => _setJson(_messagesKey, _messages.map((e) => e.toMap()).toList());
+  Future<void> _setJson(String key, Object value) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setString(key, jsonEncode(value));
+  }
   Future<void> _saveTokenCounter() async {
-    final prefs =
-    await SharedPreferences.getInstance();
-
-    await prefs.setInt(
-      _tokenCounterKey,
-      _tokenCounter,
-    );
+    final p = await SharedPreferences.getInstance();
+    await p.setInt(_tokenCounterKey, _tokenCounter);
   }
 }

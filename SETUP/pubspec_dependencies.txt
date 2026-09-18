@@ -1,0 +1,10 @@
+Add these dependencies under dependencies: in your existing pubspec.yaml:
+
+  shared_preferences: ^2.5.3
+  flutter_local_notifications: ^19.4.1
+  permission_handler: ^12.0.1
+  geolocator: ^14.0.2
+  url_launcher: ^6.3.2
+
+Then run:
+flutter pub get

@@ -12,12 +12,13 @@ import 'screens/token_page.dart';
 import 'services/app_language.dart';
 import 'services/farmer_data.dart';
 import 'services/farmer_session.dart';
+import 'services/notification_service.dart';
+import 'services/permission_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await FarmerDataService.instance.loadData();
-
+  await NotificationService.instance.initialize();
   runApp(const KisanQueueApp());
 }
 
@@ -35,8 +36,11 @@ class KisanQueueApp extends StatelessWidget {
           theme: ThemeData(
             useMaterial3: true,
             scaffoldBackgroundColor: const Color(0xFFF6F8F4),
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF287A32),
+            colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF287A32)),
+            inputDecorationTheme: const InputDecorationTheme(
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(),
             ),
             appBarTheme: const AppBarTheme(
               backgroundColor: Color(0xFFF6F8F4),
@@ -53,241 +57,178 @@ class KisanQueueApp extends StatelessWidget {
 
 class LoginPageWrapper extends StatefulWidget {
   const LoginPageWrapper({super.key});
-
   @override
   State<LoginPageWrapper> createState() => _LoginPageWrapperState();
 }
 
 class _LoginPageWrapperState extends State<LoginPageWrapper> {
   FarmerSession? farmerSession;
+  String? employeeId;
+  bool loading = true;
 
-  bool ownerLoggedIn = false;
+  @override
+  void initState() {
+    super.initState();
+    restoreSession();
+  }
 
-  void handleFarmerLogin(FarmerSession session) {
-    FarmerDataService.instance.registerFarmer(
-      name: session.name,
-      mobile: session.mobile,
-    );
-
+  Future<void> restoreSession() async {
+    final farmer = await FarmerSessionService.getSession();
+    final employee = await EmployeeSessionService.getSession();
+    if (!mounted) return;
     setState(() {
-      farmerSession = session;
-      ownerLoggedIn = false;
+      farmerSession = farmer;
+      employeeId = employee;
+      loading = false;
     });
   }
 
-  void handleOwnerLogin() {
+  void handleFarmerLogin(FarmerSession session) {
+    FarmerDataService.instance.registerFarmer(name: session.name, mobile: session.mobile);
     setState(() {
-      ownerLoggedIn = true;
+      farmerSession = session;
+      employeeId = null;
+    });
+  }
+
+  void handleEmployeeLogin(String id) {
+    setState(() {
+      employeeId = id;
       farmerSession = null;
     });
   }
 
   Future<void> farmerLogout() async {
     await FarmerSessionService.clearSession();
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      farmerSession = null;
-    });
+    if (!mounted) return;
+    setState(() => farmerSession = null);
   }
 
-  void ownerLogout() {
-    setState(() {
-      ownerLoggedIn = false;
-    });
+  Future<void> employeeLogout() async {
+    await EmployeeSessionService.clearSession();
+    if (!mounted) return;
+    setState(() => employeeId = null);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (ownerLoggedIn) {
-      return OwnerDashboard(
-        onLogout: ownerLogout,
-      );
+    if (loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-
-    if (farmerSession == null) {
-      return LoginPage(
-        onFarmerLogin: handleFarmerLogin,
-        onOwnerLogin: handleOwnerLogin,
-      );
+    if (employeeId != null) {
+      return OwnerDashboard(employeeId: employeeId!, onLogout: employeeLogout);
     }
-
-    return MainNavigation(
-      farmerSession: farmerSession!,
-      onLogout: farmerLogout,
-    );
+    if (farmerSession != null) {
+      return MainNavigation(farmerSession: farmerSession!, onLogout: farmerLogout);
+    }
+    return LoginPage(onFarmerLogin: handleFarmerLogin, onOwnerLogin: handleEmployeeLogin);
   }
 }
 
 class MainNavigation extends StatefulWidget {
-  const MainNavigation({
-    super.key,
-    required this.farmerSession,
-    required this.onLogout,
-  });
-
+  const MainNavigation({super.key, required this.farmerSession, required this.onLogout});
   final FarmerSession farmerSession;
   final Future<void> Function() onLogout;
-
   @override
   State<MainNavigation> createState() => _MainNavigationState();
 }
 
 class _MainNavigationState extends State<MainNavigation> {
   int currentIndex = 0;
+  FarmerBooking? currentBooking;
 
-  Map<String, String>? bookingData;
-
-  void selectPage(int index) {
-    setState(() {
-      currentIndex = index;
-    });
-  }
-
-  Future<void> openBookingPage() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const BookingPage(),
-      ),
-    );
-
-    if (result is Map) {
-      final newBooking = <String, String>{
-        'token': result['token'].toString(),
-        'crop': result['crop'].toString(),
-        'quantity': result['quantity'].toString(),
-        'centre': result['centre'].toString(),
-        'date': result['date'].toString(),
-        'time': result['time'].toString(),
-        'farmerName': widget.farmerSession.name,
-        'farmerMobile': widget.farmerSession.mobile,
-      };
-
-      await FarmerDataService.instance.addBooking(
-        token: newBooking['token']!,
-        farmerName: newBooking['farmerName']!,
-        farmerMobile: newBooking['farmerMobile']!,
-        crop: newBooking['crop']!,
-        quantity: newBooking['quantity']!,
-        centre: newBooking['centre']!,
-        date: newBooking['date']!,
-        time: newBooking['time']!,
-      );
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        bookingData = newBooking;
-      });
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => TokenPage(
-            tokenNumber: newBooking['token']!,
-            crop: newBooking['crop']!,
-            quantity: newBooking['quantity']!,
-            centre: newBooking['centre']!,
-            date: newBooking['date']!,
-            time: newBooking['time']!,
-          ),
-        ),
-      );
-    }
-  }
-
-  void openCentrePage() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CentrePage(
-          onBookSlot: openBookingPage,
-        ),
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    syncBooking();
+    FarmerDataService.instance.addListener(syncBooking);
   }
 
   @override
-  Widget build(BuildContext context) {
-    Widget currentPage;
+  void dispose() {
+    FarmerDataService.instance.removeListener(syncBooking);
+    super.dispose();
+  }
 
+  void syncBooking() {
+    final list = FarmerDataService.instance.bookings
+        .where((b) => b.farmerMobile == widget.farmerSession.mobile)
+        .toList();
+    if (mounted) setState(() => currentBooking = list.isEmpty ? null : list.last);
+  }
+
+  void selectPage(int index) => setState(() => currentIndex = index);
+
+  Future<void> openBookingPage() async {
+    final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => const BookingPage()));
+    if (result is! Map) return;
+
+    final location = await PermissionService.getCurrentLocation();
+    final booking = <String, String>{
+      'token': result['token'].toString(),
+      'crop': result['crop'].toString(),
+      'quantity': result['quantity'].toString(),
+      'centre': result['centre'].toString(),
+      'date': result['date'].toString(),
+      'time': result['time'].toString(),
+      'farmerName': widget.farmerSession.name,
+      'farmerMobile': widget.farmerSession.mobile,
+    };
+
+    await FarmerDataService.instance.addBooking(
+      token: booking['token']!, farmerName: booking['farmerName']!, farmerMobile: booking['farmerMobile']!,
+      crop: booking['crop']!, quantity: booking['quantity']!, centre: booking['centre']!,
+      date: booking['date']!, time: booking['time']!, latitude: location?.latitude, longitude: location?.longitude,
+    );
+
+    await NotificationService.instance.show(
+      id: booking['token'].hashCode,
+      title: 'Slot Booked Successfully',
+      body: 'Official update: ${booking['token']} is booked for ${booking['date']} at ${booking['time']}.',
+    );
+
+    if (!mounted) return;
+    Navigator.push(context, MaterialPageRoute(builder: (_) => TokenPage(
+      tokenNumber: booking['token']!, crop: booking['crop']!, quantity: booking['quantity']!,
+      centre: booking['centre']!, date: booking['date']!, time: booking['time']!,
+    )));
+  }
+
+  void openCentrePage() => Navigator.push(context, MaterialPageRoute(builder: (_) => CentrePage(onBookSlot: openBookingPage)));
+
+  @override
+  Widget build(BuildContext context) {
+    Widget page;
     switch (currentIndex) {
       case 1:
-        currentPage = QueuePage(
-          bookingData: bookingData,
-        );
+        page = QueuePage(bookingData: currentBooking);
         break;
-
       case 2:
-        currentPage = AlertsPage(
-          bookingData: bookingData,
-        );
+        page = AlertsPage(bookingData: currentBooking);
         break;
-
       case 3:
-        currentPage = ProfilePage(
-          farmerName: widget.farmerSession.name,
-          farmerMobile: widget.farmerSession.mobile,
-          onLogout: widget.onLogout,
-        );
+        page = ProfilePage(farmerName: widget.farmerSession.name, farmerMobile: widget.farmerSession.mobile, onLogout: widget.onLogout);
         break;
-
       default:
-        currentPage = HomePage(
-          onBookSlot: openBookingPage,
-          onQueue: () {
-            selectPage(1);
+        page = HomePage(
+          onBookSlot: openBookingPage, onQueue: () => selectPage(1), onAlerts: () => selectPage(2),
+          onProfile: () => selectPage(3), onCentres: openCentrePage,
+          bookingData: currentBooking == null ? null : {
+            'token': currentBooking!.token, 'crop': currentBooking!.crop, 'quantity': currentBooking!.quantity,
+            'centre': currentBooking!.centre, 'date': currentBooking!.date, 'time': currentBooking!.time,
           },
-          onAlerts: () {
-            selectPage(2);
-          },
-          onProfile: () {
-            selectPage(3);
-          },
-          onCentres: openCentrePage,
-          bookingData: bookingData,
         );
     }
-
     return Scaffold(
-      body: currentPage,
+      body: page,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: currentIndex,
-        onDestinationSelected: selectPage,
-        backgroundColor: Colors.white,
-        indicatorColor: const Color(0xFFDDF1DF),
-        elevation: 3,
+        selectedIndex: currentIndex, onDestinationSelected: selectPage,
+        backgroundColor: Colors.white, indicatorColor: const Color(0xFFDDF1DF),
         destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home),
-            label: AppText.home,
-          ),
-          NavigationDestination(
-            icon: const Icon(
-              Icons.confirmation_number_outlined,
-            ),
-            selectedIcon: const Icon(
-              Icons.confirmation_number,
-            ),
-            label: AppText.queue,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.notifications_none),
-            selectedIcon: const Icon(Icons.notifications),
-            label: AppText.alerts,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.person_outline),
-            selectedIcon: const Icon(Icons.person),
-            label: AppText.profile,
-          ),
+          NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home), label: AppText.home),
+          NavigationDestination(icon: const Icon(Icons.confirmation_number_outlined), selectedIcon: const Icon(Icons.confirmation_number), label: AppText.queue),
+          NavigationDestination(icon: const Icon(Icons.notifications_none), selectedIcon: const Icon(Icons.notifications), label: AppText.alerts),
+          NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: AppText.profile),
         ],
       ),
     );

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../services/farmer_session.dart';
+import '../services/notification_service.dart';
+import '../services/permission_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({
@@ -10,7 +12,7 @@ class LoginPage extends StatefulWidget {
   });
 
   final void Function(FarmerSession session) onFarmerLogin;
-  final VoidCallback onOwnerLogin;
+  final void Function(String employeeId) onOwnerLogin;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -80,6 +82,8 @@ class _LoginPageState extends State<LoginPage> {
       mobile: mobile,
     );
 
+    await NotificationService.instance.requestPermission();
+    await PermissionService.requestAppPermissions();
     widget.onFarmerLogin(session);
 
     if (!mounted) {
@@ -105,10 +109,10 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    const validOwnerId = '9353371875';
+    const validEmployeeId = '9353371875';
     const validPassword = 'Derive@32';
 
-    if (ownerId != validOwnerId ||
+    if (ownerId != validEmployeeId ||
         password != validPassword) {
       showMessage('Invalid Owner ID or password.');
       return;
@@ -122,7 +126,10 @@ class _LoginPageState extends State<LoginPage> {
       const Duration(milliseconds: 300),
     );
 
-    widget.onOwnerLogin();
+    await NotificationService.instance.requestPermission();
+    await PermissionService.requestAppPermissions();
+    await EmployeeSessionService.saveSession(employeeId: ownerId);
+    widget.onOwnerLogin(ownerId);
 
     if (!mounted) {
       return;
@@ -249,7 +256,7 @@ class _LoginPageState extends State<LoginPage> {
 
                   Text(
                     ownerMode
-                        ? 'Procurement Centre Owner Login'
+                        ? 'Procurement Centre Employee Login'
                         : 'Farmer Login',
                     style: const TextStyle(
                       color: Colors.black54,
@@ -282,7 +289,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         const SizedBox(width: 5),
                         roleButton(
-                          title: 'Owner',
+                          title: 'Employee',
                           icon: Icons
                               .admin_panel_settings_outlined,
                           selected: ownerMode,
@@ -324,7 +331,7 @@ class _LoginPageState extends State<LoginPage> {
 
                   Text(
                     ownerMode
-                        ? 'Authorized procurement centre access'
+                        ? 'Authorized employee access'
                         : 'Book procurement slots and track your queue',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
@@ -404,7 +411,7 @@ class _LoginPageState extends State<LoginPage> {
       CrossAxisAlignment.start,
       children: [
         const Text(
-          'Owner credentials',
+          'Employee credentials',
           style: TextStyle(
             fontSize: 19,
             fontWeight: FontWeight.bold,
@@ -417,7 +424,7 @@ class _LoginPageState extends State<LoginPage> {
           controller: ownerIdController,
           keyboardType: TextInputType.number,
           decoration: inputDecoration(
-            label: 'Owner ID',
+            label: 'Employee ID',
             icon: Icons.badge_outlined,
           ),
         ),
@@ -462,7 +469,7 @@ class _LoginPageState extends State<LoginPage> {
             label: Text(
               isLoading
                   ? 'Signing in...'
-                  : 'Owner Login',
+                  : 'Employee Login',
             ),
           ),
         ),
